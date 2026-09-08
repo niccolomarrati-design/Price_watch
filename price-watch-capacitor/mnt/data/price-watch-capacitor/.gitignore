@@ -1,0 +1,10 @@
+node_modules/
+.DS_Store
+*.log
+android/.gradle/
+android/.idea/
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/build/
+ios/App/Pods/
+ios/App/DerivedData/

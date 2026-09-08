@@ -1,0 +1,2681 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#0f1218"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="Price Watch"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="icon" type="image/png" sizes="16x16" href="icon16.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="icon32.png"/>
+<link rel="icon" type="image/png" sizes="48x48" href="icon48.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png"/>
+<link rel="apple-touch-icon-precomposed" href="apple-touch-icon-precomposed.png"/>
+<title>Price Watch</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ── RESET & ROOT ─────────────────────────────────── */
+:root {
+  --bg:       #0f1218;
+  --surf:     #181d27;
+  --card:     #1e2433;
+  --card2:    #252b3a;
+  --border:   #2e3447;
+  --border2:  #3d4560;
+  --accent:   #3b82f6;
+  --accent-d: #1d4ed8;
+  --abg:      #1a2540;
+  --green:    #22c55e;
+  --gbg:      #0d2218;
+  --red:      #ef4444;
+  --rbg:      #2a1010;
+  --amber:    #f59e0b;
+  --text:     #f1f5f9;
+  --text2:    #94a3b8;
+  --text3:    #64748b;
+  --r:        12px;
+  --st: env(safe-area-inset-top,0px);
+  --sb: env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;font-size:15px;-webkit-font-smoothing:antialiased}
+
+/* ── LAYOUT ──────────────────────────────────────── */
+.app{display:flex;flex-direction:column;height:100dvh;max-width:540px;margin:0 auto;overflow:hidden}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:calc(var(--st) + 12px) 16px 12px;background:var(--surf);border-bottom:1px solid var(--border);flex-shrink:0;z-index:10}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.logo{width:32px;height:32px;border-radius:9px;overflow:hidden;flex-shrink:0;display:flex}
+.logo img{width:100%;height:100%;object-fit:cover}
+.auth-logo{width:84px;height:84px;margin:0 auto 8px;border-radius:20px;overflow:hidden}
+.auth-logo img{width:100%;height:100%;object-fit:cover}
+.topbar h1{font-size:18px;font-weight:700;letter-spacing:-.3px}
+.topbar-right{display:flex;gap:6px}
+.icon-btn{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;-webkit-tap-highlight-color:transparent}
+.icon-btn:active{background:var(--card2)}
+
+/* ── VIEWS ───────────────────────────────────────── */
+.view{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none}
+.view.active{display:block}
+.view-body{padding:16px;padding-bottom:calc(var(--sb) + 84px)}
+
+/* ── BOTTOM NAV ──────────────────────────────────── */
+.bnav{display:flex;background:var(--surf);border-top:1px solid var(--border);padding-bottom:var(--sb);flex-shrink:0}
+.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;gap:3px;border:none;background:none;cursor:pointer;color:var(--text3);font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;transition:color .15s;-webkit-tap-highlight-color:transparent}
+.bnav-btn .ico{font-size:20px;line-height:1}
+.bnav-btn.on{color:var(--accent)}
+
+/* ── AUTH SCREEN ─────────────────────────────────── */
+.auth-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100dvh;padding:24px}
+.auth-title{font-size:24px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
+.auth-sub{font-size:14px;color:var(--text2);margin-bottom:28px;text-align:center}
+.auth-card{background:var(--surf);border:1px solid var(--border);border-radius:16px;padding:24px;width:100%;max-width:380px}
+.auth-tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:9px;overflow:hidden;margin-bottom:20px}
+.auth-tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;background:transparent;border:none;color:var(--text2);transition:background .15s,color .15s}
+.auth-tab.on{background:var(--accent);color:white}
+.field-lbl{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;display:block}
+.field{width:100%;background:var(--card);border:1px solid var(--border2);border-radius:9px;color:var(--text);padding:10px 12px;font-size:14px;outline:none;margin-bottom:12px}
+.field:focus{border-color:var(--accent)}
+.field::placeholder{color:var(--text3)}
+.auth-err{font-size:12px;color:var(--red);min-height:16px;margin-bottom:8px}
+.btn-full{width:100%;padding:12px;border-radius:10px;border:none;background:var(--accent);color:white;font-size:15px;font-weight:700;cursor:pointer;transition:background .15s}
+.btn-full:active{background:var(--accent-d)}
+.btn-full:disabled{opacity:.5;cursor:default}
+
+/* ── PLAN STRIP ──────────────────────────────────── */
+.plan-strip{display:flex;align-items:center;justify-content:space-between;background:var(--abg);border:1px solid var(--accent-d);border-radius:var(--r);padding:10px 14px;margin-bottom:14px}
+.plan-lbl{font-size:13px;font-weight:700;color:var(--accent)}
+.plan-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.plan-strip-btn{background:var(--accent);color:white;border:none;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
+
+/* ── ADD PRODUCT ─────────────────────────────────── */
+.add-row{display:flex;gap:8px;margin-bottom:8px}
+.url-inp{flex:1;background:var(--card);border:1px solid var(--border2);border-radius:10px;color:var(--text);padding:10px 12px;font-size:14px;outline:none}
+.url-inp:focus{border-color:var(--accent)}
+.url-inp::placeholder{color:var(--text3)}
+.btn-add{background:var(--accent);color:white;border:none;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s;-webkit-tap-highlight-color:transparent}
+.btn-add:active{background:var(--accent-d)}
+.btn-add:disabled{opacity:.5;cursor:default}
+.add-hint{font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.5}
+
+/* ── STATUS BAR ──────────────────────────────────── */
+.statusbar{font-size:12px;min-height:18px;margin-bottom:8px;color:var(--text2)}
+.statusbar.err{color:var(--red)}
+.statusbar.ok{color:var(--green)}
+
+/* ── PRODUCT CARDS ───────────────────────────────── */
+.prod-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden;position:relative;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.prod-card.dragging{box-shadow:0 14px 28px rgba(0,0,0,.55);cursor:grabbing}
+.prod-card.entrance{animation:cardEnter .6s cubic-bezier(.55,.055,.675,.19) both}
+@keyframes cardEnter{0%{transform:translateY(160px);opacity:0}100%{transform:translateY(0);opacity:1}}
+
+/* ── SPLASH SCREEN ───────────────────────────────── */
+#splash{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:9999;opacity:1;transition:opacity 1s ease}
+#splash.fade-out{opacity:0;pointer-events:none}
+.splash-logo{width:120px;height:120px;border-radius:28px;overflow:hidden;animation:splashPulse 1.4s ease-in-out infinite}
+.splash-logo img{width:100%;height:100%;object-fit:cover}
+@keyframes splashPulse{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.08);opacity:1}}
+.prod-head{padding:12px 14px 10px}
+.prod-name{font-size:13.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;text-decoration:none;margin-bottom:6px}
+.prod-name:hover{color:var(--accent)}
+.prod-price{font-size:23px;font-weight:800;color:var(--green);letter-spacing:-.5px}
+.prod-diff{font-size:12px;margin-top:2px}
+.prod-target{font-size:11px;color:var(--text3);margin-top:3px}
+.prod-check{font-size:11px;margin-top:4px}
+.prod-check.err{color:var(--red)}
+.prod-check.ok{color:var(--text3)}
+.variant-banner-btn{display:block;width:100%;text-align:left;background:var(--rbg);border:1px solid var(--red);border-radius:8px;color:var(--red);font-size:11.5px;font-weight:700;padding:7px 10px;margin-top:8px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+
+/* ── CARTELLE ────────────────────────────────────── */
+.folder-card{
+  background:linear-gradient(145deg,rgba(255,255,255,.16),rgba(255,255,255,.075));
+  border:1px solid rgba(255,255,255,.20);
+  border-radius:14px;
+  margin-bottom:10px;
+  min-height:112px;
+  height:112px;
+  padding:0;
+  position:relative;
+  overflow:hidden;
+  isolation:isolate;
+  touch-action:pan-y;
+  user-select:none;
+  -webkit-user-select:none;
+  cursor:pointer;
+  transition:outline-color .15s,transform .15s,box-shadow .2s,border-color .2s;
+}
+.folder-card.dragging{box-shadow:0 14px 28px rgba(0,0,0,.55);cursor:grabbing}
+.folder-card.drop-target{outline:2px solid var(--accent);outline-offset:2px;transform:scale(1.02)}
+.folder-card.entrance{animation:cardEnter .6s cubic-bezier(.55,.055,.675,.19) both}
+.folder-card-inner{position:absolute;inset:0;z-index:0}
+.folder-glass-tab{
+  position:absolute;
+  top:-1px;left:0;right:0;
+  height:16.6667%;
+  min-height:18px;
+  background:linear-gradient(180deg,rgba(77,143,255,.66),rgba(59,130,246,.30));
+  border:1px solid rgba(255,255,255,.18);
+  border-bottom-color:rgba(255,255,255,.13);
+  border-radius:14px 14px 5px 0;
+  clip-path:polygon(0 0, 7.5% 0, 10% 28%, 100% 28%, 100% 100%, 0 100%);
+  backdrop-filter:blur(12px) saturate(155%);
+  -webkit-backdrop-filter:blur(12px) saturate(155%);
+  pointer-events:none;
+}
+.folder-card.has-products .folder-body-fill{
+  position:absolute;
+  left:7px;right:7px;bottom:7px;
+  top:7px;
+  border-radius:9px 9px 10px 10px;
+  background:
+    linear-gradient(145deg,rgba(58,132,255,.68),rgba(37,99,235,.52) 55%,rgba(29,78,216,.40));
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.18),
+    inset 0 -8px 22px rgba(0,0,0,.09);
+  backdrop-filter:blur(16px) saturate(165%);
+  -webkit-backdrop-filter:blur(16px) saturate(165%);
+  overflow:hidden;
+  pointer-events:none;
+}
+.folder-card.has-products .folder-body-fill::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(118deg,rgba(255,255,255,.16),transparent 30%,transparent 72%,rgba(255,255,255,.045));
+  mix-blend-mode:screen;
+}
+.folder-card.folder-empty .folder-body-fill{display:none}
+.folder-label{
+  position:absolute;
+  left:14px;right:14px;bottom:10px;
+  z-index:2;
+  display:flex;align-items:flex-end;justify-content:space-between;gap:8px;
+  pointer-events:none;
+}
+.folder-name{font-size:13.5px;font-weight:600;letter-spacing:-.1px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 8px rgba(0,0,0,.28)}
+.folder-count{font-size:11px;font-weight:500;color:rgba(241,245,249,.66);white-space:nowrap;text-shadow:0 1px 8px rgba(0,0,0,.24)}
+.folder-icon{display:none}
+
+.add-row-secondary{display:flex;gap:8px;margin-bottom:14px}
+.btn-secondary-add{flex:1;background:var(--card);border:1px solid var(--border2);border-radius:10px;color:var(--text2);padding:9px;font-size:13px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.btn-secondary-add:active{background:var(--card2)}
+
+.folder-eject-zone{background:var(--abg);border:2px dashed var(--accent-d);border-radius:var(--r);padding:12px;margin-bottom:14px;text-align:center;font-size:12px;color:var(--accent);font-weight:700;opacity:0;max-height:0;overflow:hidden;transition:opacity .2s ease,max-height .2s ease,padding .2s ease,margin .2s ease}
+.folder-eject-zone.active{opacity:1;max-height:60px;padding:12px;margin-bottom:14px}
+.folder-eject-zone.hover{background:var(--accent);color:white;border-style:solid}
+.variant-banner-btn:active{background:#3a1414}
+.prod-options-wrap{display:none;padding:0 14px 12px;justify-content:flex-start}
+.prod-options-trigger{touch-action:manipulation}
+.prod-card.options-active .prod-options-wrap{display:flex}
+.prod-options-trigger{background:none;border:none;color:var(--accent);font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;padding:2px 0;-webkit-tap-highlight-color:transparent}
+.opt-arrow{font-size:10px;transition:transform .25s ease}
+.prod-options-trigger.menu-open .opt-arrow{transform:rotate(180deg)}
+
+/* Menu a tendina flottante: vive fuori dalle card (che hanno overflow:hidden
+   per gli angoli arrotondati) così può comparire SOPRA il prodotto senza
+   essere tagliato. Un unico elemento condiviso, riposizionato via JS. */
+#floatingOptionsMenu{position:fixed;background:#000;border:1px solid #2a2a2a;border-radius:10px;overflow:hidden;z-index:200;opacity:0;visibility:hidden;transition:opacity 1s ease,visibility 0s linear 1s;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+#floatingOptionsMenu.open{opacity:1;visibility:visible;transition:opacity 1s ease}
+#floatingOptionsMenu button{display:block;width:100%;text-align:left;background:none;border:none;color:#fff;font-size:13px;font-weight:600;padding:11px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#floatingOptionsMenu button:not(:last-child){border-bottom:1px solid #232323}
+#floatingOptionsMenu button:active{background:#1c1c1c}
+#floatingOptionsMenu button.danger{color:#ff6b6b}
+
+#floatingFolderMenu{position:fixed;background:#000;border:1px solid #2a2a2a;border-radius:10px;overflow:hidden;z-index:200;opacity:0;visibility:hidden;transition:opacity 1s ease,visibility 0s linear 1s;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+#floatingFolderMenu.open{opacity:1;visibility:visible;transition:opacity 1s ease}
+#floatingFolderMenu button{display:block;width:100%;text-align:left;background:none;border:none;color:#fff;font-size:13px;font-weight:600;padding:11px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#floatingFolderMenu button:not(:last-child){border-bottom:1px solid #232323}
+#floatingFolderMenu button:active{background:#1c1c1c}
+#floatingFolderMenu button.danger{color:#ff6b6b}
+
+/* ── EMPTY ───────────────────────────────────────── */
+.empty{text-align:center;padding:50px 24px}
+.empty-ico{font-size:48px;opacity:.35;margin-bottom:12px}
+.empty-title{font-size:16px;font-weight:600;color:var(--text2)}
+.empty-sub{font-size:13px;color:var(--text3);margin-top:6px;line-height:1.5}
+
+/* ── HISTORY ─────────────────────────────────────── */
+.sub-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.back-btn{background:var(--card);border:1px solid var(--border);border-radius:9px;color:var(--text2);padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap}
+.back-btn:active{background:var(--card2)}
+.sub-title{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chart-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px;height:150px;position:relative}
+.chart-box canvas{width:100%!important;height:122px!important}
+.hist-row{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:7px;font-size:13px}
+.hist-date{color:var(--text2)}
+.hist-price{font-weight:700;display:flex;align-items:center;gap:8px}
+.chg-d{font-size:11px;font-weight:700;color:var(--green)}
+.chg-u{font-size:11px;font-weight:700;color:var(--red)}
+
+/* ── PLAN CARDS ──────────────────────────────────── */
+.plan-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.plan-card.current{border-color:var(--accent)}
+.plan-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.plan-ico{font-size:24px}
+.plan-name{font-size:16px;font-weight:700}
+.plan-tag{font-size:11px;color:var(--text3);margin-top:2px}
+.plan-price-big{font-size:28px;font-weight:900;letter-spacing:-1px;margin-bottom:12px}
+.plan-price-big small{font-size:13px;font-weight:400;color:var(--text2)}
+.plan-feats{list-style:none;margin-bottom:14px}
+.plan-feats li{font-size:12.5px;color:var(--text2);padding:4px 0 4px 18px;position:relative}
+.plan-feats li::before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:700}
+.plan-feats li.intro{padding-left:0;color:var(--text3);font-weight:600}
+.plan-feats li.intro::before{content:none}
+.plan-cta{width:100%;padding:10px;border-radius:10px;border:none;background:var(--accent);color:white;font-weight:700;font-size:14px;cursor:pointer;transition:background .15s}
+.plan-cta:active{background:var(--accent-d)}
+.plan-cta.cur{background:var(--card2);color:var(--text3);cursor:default;border:1px solid var(--border)}
+.plan-disc{font-size:11px;color:var(--text3);text-align:center;padding:8px;line-height:1.5}
+
+/* ── SETTINGS ────────────────────────────────────── */
+.sg{margin-bottom:20px}
+.sg-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;padding:0 2px}
+.sr{display:flex;align-items:center;justify-content:space-between;background:var(--card);border-left:1px solid var(--border);border-right:1px solid var(--border);padding:13px 14px;gap:10px}
+.sr:first-of-type{border-top:1px solid var(--border);border-radius:var(--r) var(--r) 0 0}
+.sr:last-of-type{border-bottom:1px solid var(--border);border-radius:0 0 var(--r) var(--r)}
+.sr:only-of-type{border:1px solid var(--border);border-radius:var(--r)}
+.sr+.sr{border-top:1px solid var(--border)}
+.sr-lbl{font-size:14px;font-weight:600}
+.sr-desc{font-size:12px;color:var(--text3);margin-top:2px}
+.tog{position:relative;width:44px;height:26px;display:inline-block;flex-shrink:0}
+.tog input{opacity:0;width:0;height:0}
+.tog-tr{position:absolute;inset:0;background:var(--border2);border-radius:26px;cursor:pointer;transition:background .2s}
+.tog-th{position:absolute;width:20px;height:20px;background:white;border-radius:50%;top:3px;left:3px;transition:transform .2s;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.tog input:checked~.tog-tr{background:var(--accent)}
+.tog input:checked~.tog-th{transform:translateX(18px)}
+.sel{background:var(--card2);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:6px 10px;font-size:13px;cursor:pointer;outline:none}
+.sm-btn{background:var(--accent);color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.sm-btn.danger{background:#7f1d1d}
+.key-inp{flex:1;min-width:0;background:var(--card2);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:8px 10px;font-size:13px;outline:none}
+.key-inp:focus{border-color:var(--accent)}
+.key-st{font-size:12px;padding:6px 0 0 14px;min-height:18px}
+.key-st.ok{color:var(--green)}
+.key-st.err{color:var(--red)}
+.wide-inp{width:100%;background:var(--card2);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:9px 12px;font-size:13px;outline:none;margin-top:6px}
+.wide-inp:focus{border-color:var(--accent)}
+
+/* ── ADMIN ───────────────────────────────────────── */
+.admin-badge{background:linear-gradient(135deg,#052e1e,#064e3b);border:1px solid #10b981;border-radius:var(--r);padding:12px 14px;margin-bottom:16px;text-align:center}
+.admin-badge b{font-size:14px;font-weight:700;color:#34d399;display:block}
+.admin-badge span{font-size:12px;color:#6ee7b7}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px}
+.stat-card{background:var(--card2);border:1px solid var(--border);border-radius:var(--r);padding:14px;text-align:center}
+.stat-val{font-size:24px;font-weight:800;color:var(--accent)}
+.stat-lbl{font-size:11px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.admin-log{background:#0a0d14;color:#4ade80;font-family:"SF Mono",monospace;font-size:11px;border-radius:10px;padding:10px 12px;max-height:180px;overflow-y:auto;line-height:1.7;border:1px solid var(--border)}
+.log-entry{padding:2px 0;border-bottom:1px solid #1a2235}
+.log-entry:last-child{border:none}
+.log-time{color:#94a3b8;margin-right:6px}
+.log-ok{color:#4ade80}
+.log-changed{color:#60a5fa}
+.log-error{color:#f87171}
+
+/* ── MODAL ───────────────────────────────────────── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:flex-end;z-index:100;opacity:0;pointer-events:none;transition:opacity .2s}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surf);border-radius:20px 20px 0 0;width:100%;padding:20px;padding-bottom:calc(var(--sb) + 20px);transform:translateY(100%);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.overlay.open .modal{transform:translateY(0)}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:6px;text-align:center}
+.modal p{font-size:13px;color:var(--text2);margin-bottom:16px;text-align:center}
+.modal-actions{display:flex;gap:10px;margin-top:10px}
+.btn-cancel{flex:1;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text2);padding:12px;font-size:14px;font-weight:700;cursor:pointer}
+.btn-ok{flex:2;background:var(--accent);border:none;border-radius:10px;color:white;padding:12px;font-size:14px;font-weight:700;cursor:pointer}
+.variant-option-btn{width:100%;background:var(--card);border:1px solid var(--border2);border-radius:10px;color:var(--text);padding:13px 14px;font-size:14px;font-weight:700;cursor:pointer;text-align:left;transition:background .12s,border-color .12s;-webkit-tap-highlight-color:transparent}
+.variant-option-btn:active{background:var(--card2);border-color:var(--accent)}
+
+/* ── TOAST ───────────────────────────────────────── */
+.toast{position:fixed;bottom:calc(var(--sb) + 84px);left:50%;transform:translateX(-50%) translateY(16px);background:var(--card2);border:1px solid var(--border2);border-radius:100px;padding:10px 20px;font-size:13px;font-weight:600;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap;z-index:999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.hidden{display:none!important}
+.divider{height:1px;background:var(--border);margin:14px 0}
+.ver{text-align:center;font-size:11px;color:var(--text3);padding:10px}
+
+
+/* ── LIQUID GLASS — Apple-inspired translucent UI ───────────── */
+:root{
+  --glass-bg: rgba(255,255,255,.075);
+  --glass-bg-strong: rgba(255,255,255,.105);
+  --glass-border: rgba(255,255,255,.14);
+  --glass-border-soft: rgba(255,255,255,.08);
+  --glass-highlight: rgba(255,255,255,.22);
+  --glass-shadow: 0 18px 50px rgba(0,0,0,.28), 0 2px 10px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.10);
+  --glass-blur: 22px;
+}
+
+body{
+  background:
+    radial-gradient(850px 520px at 10% -10%, rgba(59,130,246,.18), transparent 60%),
+    radial-gradient(700px 480px at 100% 10%, rgba(147,51,234,.13), transparent 58%),
+    radial-gradient(620px 520px at 50% 100%, rgba(14,165,233,.08), transparent 60%),
+    var(--bg);
+}
+
+.topbar,
+.bnav,
+.auth-card,
+.plan-strip,
+.prod-card,
+.chart-box,
+.hist-row,
+.plan-card,
+.sr,
+.stat-card,
+.admin-badge,
+.modal,
+#floatingOptionsMenu{
+  background: linear-gradient(135deg, rgba(255,255,255,.105), rgba(255,255,255,.045));
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(145%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(145%);
+}
+
+.topbar,
+.bnav{
+  position:relative;
+  overflow:hidden;
+}
+.topbar::before,
+.bnav::before,
+.auth-card::before,
+.plan-strip::before,
+.prod-card::before,
+.chart-box::before,
+.hist-row::before,
+.plan-card::before,
+.sr::before,
+.stat-card::before,
+.modal::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(115deg, rgba(255,255,255,.13), transparent 28%, transparent 68%, rgba(255,255,255,.035));
+  opacity:.85;
+}
+
+.logo,
+.auth-logo,
+.splash-logo{
+  box-shadow:0 10px 30px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.20);
+}
+
+.icon-btn,
+.back-btn,
+.sel,
+.field,
+.url-inp,
+.key-inp{
+  background:rgba(255,255,255,.075);
+  border-color:rgba(255,255,255,.14);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 6px 18px rgba(0,0,0,.10);
+  -webkit-backdrop-filter:blur(14px) saturate(140%);
+  backdrop-filter:blur(14px) saturate(140%);
+}
+
+.icon-btn:hover,
+.back-btn:hover,
+.sel:hover{
+  background:rgba(255,255,255,.11);
+}
+
+.btn-add,
+.btn-full,
+.plan-cta,
+.plan-strip-btn,
+.sm-btn{
+  box-shadow:0 10px 24px rgba(37,99,235,.24), inset 0 1px 0 rgba(255,255,255,.22);
+}
+
+.plan-strip{
+  background:linear-gradient(135deg, rgba(59,130,246,.18), rgba(59,130,246,.07));
+}
+
+.prod-card,
+.plan-card,
+.chart-box,
+.hist-row,
+.sr,
+.stat-card{
+  overflow:hidden;
+}
+
+.prod-card:hover,
+.plan-card:hover{
+  border-color:rgba(255,255,255,.20);
+  box-shadow:0 20px 55px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.11);
+}
+
+.tog-tr{
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.24);
+}
+
+.tog input:checked~.tog-tr{
+  box-shadow:0 0 18px rgba(59,130,246,.28), inset 0 1px 0 rgba(255,255,255,.20);
+}
+
+.tog-th{
+  box-shadow:0 3px 10px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.65);
+}
+
+.auth-wrap{
+  background:
+    radial-gradient(600px 420px at 50% 10%, rgba(59,130,246,.10), transparent 65%),
+    transparent;
+}
+
+.overlay{
+  background:rgba(0,0,0,.52);
+  -webkit-backdrop-filter:blur(8px);
+  backdrop-filter:blur(8px);
+}
+
+.toast{
+  background:rgba(37,43,58,.68);
+  border-color:rgba(255,255,255,.14);
+  box-shadow:0 16px 34px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.12);
+  -webkit-backdrop-filter:blur(18px) saturate(145%);
+  backdrop-filter:blur(18px) saturate(145%);
+}
+
+#floatingOptionsMenu button:active{
+  background:rgba(255,255,255,.08);
+}
+
+
+/* ── LIQUID GLASS — dynamic optical reflection ──────────────── */
+:root{
+  --lg-x: 50%;
+  --lg-y: 18%;
+  --lg-angle: 315deg;
+  --lg-intensity: .82;
+}
+.topbar,.bnav,.auth-card,.plan-strip,.prod-card,.folder-card,.chart-box,.hist-row,.plan-card,.sr,.stat-card,.admin-badge,.modal{position:relative;isolation:isolate}
+#floatingOptionsMenu{position:fixed !important;isolation:isolate}
+.topbar::after,.bnav::after,.auth-card::after,.plan-strip::after,.prod-card::after,.folder-card::after,.chart-box::after,.hist-row::after,.plan-card::after,.sr::after,.stat-card::after,.admin-badge::after,.modal::after,#floatingOptionsMenu::after{
+  content:"";position:absolute;inset:-1px;pointer-events:none;border-radius:inherit;z-index:3;padding:1.4px;opacity:var(--lg-intensity);
+  background:
+    radial-gradient(115px 115px at var(--lg-x) var(--lg-y),rgba(255,255,255,.40) 0%,rgba(255,255,255,.18) 13%,rgba(255,255,255,.055) 32%,transparent 68%),
+    conic-gradient(from var(--lg-angle) at 50% 50%,transparent 0deg 28deg,rgba(255,255,255,.02) 31deg,rgba(255,255,255,.48) 38deg,rgba(255,255,255,.16) 46deg,rgba(255,255,255,.025) 56deg,transparent 64deg 360deg);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;
+  mix-blend-mode:screen;filter:saturate(145%);will-change:background,opacity;transform:translateZ(0)
+}
+.prod-card::after,.folder-card::after,.plan-card::after,.chart-box::after,.hist-row::after,.sr::after,.stat-card::after{box-shadow:inset 0 0 26px rgba(255,255,255,.026),0 0 18px rgba(255,255,255,.018)}
+@media (prefers-reduced-motion:reduce){.topbar::after,.bnav::after,.auth-card::after,.plan-strip::after,.prod-card::after,.folder-card::after,.chart-box::after,.hist-row::after,.plan-card::after,.sr::after,.stat-card::after,.admin-badge::after,.modal::after,#floatingOptionsMenu::after{opacity:.35}}
+
+/* ── MOVE MODE ─────────────────────────────────────────────── */
+.edit-mode .prod-card,
+.edit-mode .folder-card{
+  touch-action:none !important;
+}
+.edit-mode .prod-card .prod-options-wrap,
+.edit-mode .folder-card .prod-options-wrap{
+  opacity:.45;
+}
+.edit-mode .prod-card .prod-options-trigger{
+  pointer-events:none;
+}
+#toggleMoveBtn.active{
+  background:var(--accent);
+  color:#fff;
+  border-color:var(--accent);
+  box-shadow:0 8px 22px rgba(59,130,246,.28), inset 0 1px 0 rgba(255,255,255,.25);
+}
+
+
+/* ── FOLDER GLASS: più saturo, opaco e con aletta desktop ── */
+.folder-card{
+  background:linear-gradient(145deg,rgba(255,255,255,.19),rgba(255,255,255,.095));
+  border-color:rgba(255,255,255,.22);
+  box-shadow:0 18px 42px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.18);
+  -webkit-backdrop-filter:blur(26px) saturate(180%);
+  backdrop-filter:blur(26px) saturate(180%);
+}
+.folder-glass-tab{
+  top:-1px;
+  height:18%;
+  min-height:20px;
+  background:linear-gradient(180deg,rgba(82,150,255,.72),rgba(59,130,246,.34));
+  border:1px solid rgba(255,255,255,.20);
+  border-bottom-color:rgba(255,255,255,.14);
+  border-radius:14px 14px 4px 0;
+  clip-path:polygon(0 0,7.5% 0,10% 28%,100% 28%,100% 100%,0 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 5px 16px rgba(34,88,200,.14);
+}
+.folder-card.has-products .folder-body-fill{
+  background:linear-gradient(145deg,rgba(67,139,255,.72),rgba(37,99,235,.56) 55%,rgba(29,78,216,.44));
+  border-color:rgba(255,255,255,.10);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -10px 24px rgba(0,0,0,.13),0 5px 18px rgba(25,72,180,.16);
+  -webkit-backdrop-filter:blur(22px) saturate(180%);
+  backdrop-filter:blur(22px) saturate(180%);
+}
+.folder-card::after{z-index:4;}
+
+</style>
+</head>
+<body>
+
+<!-- ── SPLASH ─────────────────────────────────────────────── -->
+<div id="splash">
+  <div class="splash-logo"><img src="icon-192.png" alt="Price Watch"/></div>
+</div>
+
+<!-- ── AUTH ───────────────────────────────────────────────── -->
+<div id="authWrap" class="auth-wrap hidden">
+  <div class="auth-logo"><img src="icon-192.png" alt="Price Watch"/></div>
+  <div class="auth-title">Price Watch</div>
+  <div class="auth-sub">Monitora prezzi da ogni dispositivo,<br>il server controlla per te.</div>
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button class="auth-tab on" id="tabLogin">Accedi</button>
+      <button class="auth-tab"   id="tabRegister">Registrati</button>
+    </div>
+    <label class="field-lbl">Email</label>
+    <input  class="field" type="email"    id="authEmail"    placeholder="tu@esempio.it" autocomplete="email"/>
+    <label class="field-lbl">Password</label>
+    <input  class="field" type="password" id="authPassword" placeholder="min 8 caratteri" autocomplete="current-password"/>
+    <div class="auth-err" id="authErr"></div>
+    <button class="btn-full" id="authSubmit">Accedi</button>
+  </div>
+</div>
+
+<!-- ── MAIN APP ────────────────────────────────────────────── -->
+<div id="appWrap" class="app hidden">
+
+  <!-- TopBar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="logo"><img src="icon-192.png" alt="Price Watch"/></div>
+      <h1>Price Watch</h1>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" id="toggleMoveBtn" title="Modalità spostamento" aria-label="Modalità spostamento">&#x21C4;</button>
+      <button class="icon-btn" id="refreshBtn" title="Controlla ora">&#x21BB;</button>
+    </div>
+  </div>
+
+  <!-- VIEW: Lista prodotti -->
+  <div class="view active" id="vHome">
+    <div class="view-body">
+      <div class="plan-strip">
+        <div>
+          <div class="plan-lbl"  id="planLbl">Free</div>
+          <div class="plan-sub"  id="planSub">0 / 30 prodotti</div>
+        </div>
+        <button class="plan-strip-btn" onclick="showView('vPlans')">Aggiorna</button>
+      </div>
+
+      <div class="add-row">
+        <input class="url-inp" id="urlInp" type="url" placeholder="https://www.amazon.it/…" autocomplete="off"/>
+        <button class="btn-add" id="addBtn">+ Aggiungi</button>
+      </div>
+      <div class="add-hint">Incolla l'URL del prodotto. Il server estrae il prezzo e lo monitora ogni ora in automatico.</div>
+
+      <div class="add-row-secondary">
+        <button class="btn-secondary-add" id="newFolderBtn">&#x1F4C1; + Nuova cartella</button>
+      </div>
+
+      <div class="statusbar" id="homeStatus"></div>
+      <div id="prodList"></div>
+      <div id="emptyState" class="empty hidden">
+        <div class="empty-ico">&#x1F50D;</div>
+        <div class="empty-title">Nessun prodotto monitorato</div>
+        <div class="empty-sub">Incolla l'URL di un prodotto qui sopra. Il server lo controllerà automaticamente ogni ora.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW: Cartella -->
+  <div class="view" id="vFolder">
+    <div class="view-body">
+      <div class="sub-header">
+        <button class="back-btn" onclick="closeFolderView()">&#x2190; Indietro</button>
+        <div class="sub-title" id="folderViewTitle"></div>
+      </div>
+      <div class="folder-eject-zone" id="folderEjectZone">&#x2B06;&#xFE0F; Rilascia qui per portarlo fuori dalla cartella</div>
+      <div id="folderProdList"></div>
+      <div id="folderEmptyState" class="empty hidden">
+        <div class="empty-ico">&#x1F4C1;</div>
+        <div class="empty-title">Cartella vuota</div>
+        <div class="empty-sub">Torna alla lista e trascina un prodotto qui sopra per aggiungerlo.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW: Storico -->
+  <div class="view" id="vHistory">
+    <div class="view-body">
+      <div class="sub-header">
+        <button class="back-btn" onclick="showView('vHome')">&#x2190; Indietro</button>
+        <div class="sub-title" id="histTitle"></div>
+      </div>
+      <div class="chart-box" id="chartBox">
+        <canvas id="priceChart"></canvas>
+      </div>
+      <div id="histList"></div>
+    </div>
+  </div>
+
+  <!-- VIEW: Piani -->
+  <div class="view" id="vPlans">
+    <div class="view-body">
+      <div class="plan-card" data-plan="free">
+        <div class="plan-head"><span class="plan-ico">&#x1F331;</span><div><div class="plan-name">Free</div><div class="plan-tag">Per iniziare</div></div></div>
+        <div class="plan-price-big">0 € </div>
+        <ul class="plan-feats">
+          <li>30 prodotti monitorati</li>
+          <li>Storico 7 giorni</li>
+          <li>Controllo server ogni ora</li>
+          <li>Notifiche calo prezzo</li>
+        </ul>
+        <button class="plan-cta" data-target="free">Usa gratis</button>
+      </div>
+
+      <div class="plan-card" data-plan="pro">
+        <div class="plan-head"><span class="plan-ico">&#x1F680;</span><div><div class="plan-name">Pro</div><div class="plan-tag">Per chi monitora tanto</div></div></div>
+        <div class="plan-price-big">5 € <small>/ mese</small></div>
+        <ul class="plan-feats">
+          <li class="intro">Tutto di Free, più:</li>
+          <li>70 prodotti monitorati</li>
+          <li>Storico 3 mesi</li>
+          <li>Controllo più frequente</li>
+        </ul>
+        <button class="plan-cta" data-target="pro" data-paid="1">Passa a Pro</button>
+      </div>
+
+      <div class="plan-card" data-plan="max">
+        <div class="plan-head"><span class="plan-ico">&#x1F451;</span><div><div class="plan-name">Max</div><div class="plan-tag">Nessun limite</div></div></div>
+        <div class="plan-price-big">10 € <small>/ mese</small></div>
+        <ul class="plan-feats">
+          <li class="intro">Tutto di Pro, più:</li>
+          <li>Prodotti illimitati ∞</li>
+          <li>Storico 3 anni</li>
+          <li>Supporto prioritario</li>
+        </ul>
+        <button class="plan-cta" data-target="max" data-paid="1">Passa a Max</button>
+      </div>
+      <p class="plan-disc">&#x1F4B3; Pagamenti tramite Stripe. Nessun dato carta salvato nell'app.</p>
+    </div>
+  </div>
+
+  <!-- VIEW: Impostazioni -->
+  <div class="view" id="vSettings">
+    <div class="view-body">
+
+      <div class="sg">
+        <div class="sg-title">&#x23F1;&#xFE0F; Frequenza controllo automatico</div>
+        <div class="sr">
+          <div class="sr-lbl">Ogni quanto controllare</div>
+          <select class="sel" id="sCheckInterval">
+            <option value="default">Default del piano</option>
+            <option value="15">Ogni 15 minuti</option>
+            <option value="30">Ogni 30 minuti</option>
+            <option value="60">Ogni ora</option>
+            <option value="180">Ogni 3 ore</option>
+            <option value="360">Ogni 6 ore</option>
+            <option value="720">Ogni 12 ore</option>
+            <option value="1440">Ogni 24 ore</option>
+          </select>
+        </div>
+        <div class="sr">
+          <div class="sr-desc" style="line-height:1.6">Default per piano: &#x1F331; Free ogni 3 ore &nbsp;·&nbsp; &#x1F680; Pro ogni ora &nbsp;·&nbsp; &#x1F451; Max ogni 20 min &nbsp;·&nbsp; &#x1F6E0;&#xFE0F; God ogni 15 min.<br>Un intervallo più corto del default del piano viene comunque limitato al minimo consentito (15 min).</div>
+        </div>
+      </div>
+
+      <div class="sg">
+        <div class="sg-title">&#x1F310; Browser Run (siti anti-bot)</div>
+        <div class="sr">
+          <div><div class="sr-lbl">Attiva Browser Run</div><div class="sr-desc">Legge il prezzo con un browser vero per siti come Amazon o Fnac. Usa le ore gratuite mensili — tienilo spento e accendilo solo quando serve (es. Black Friday) per non consumarle inutilmente.</div></div>
+          <label class="tog"><input type="checkbox" id="sBrowserRun"><div class="tog-tr"></div><div class="tog-th"></div></label>
+        </div>
+      </div>
+
+      <div class="sg">
+        <div class="sg-title">&#x1F514; Notifiche push</div>
+        <div class="sr">
+          <div><div class="sr-lbl">Notifiche su questo dispositivo</div><div class="sr-desc" id="pushStatusDesc">Ricevi un avviso anche ad app chiusa quando un prezzo cambia</div></div>
+          <label class="tog"><input type="checkbox" id="sPushEnabled"><div class="tog-tr"></div><div class="tog-th"></div></label>
+        </div>
+        <div class="sr">
+          <div class="sr-lbl">Quando notificare</div>
+          <select class="sel" id="sNotifyMode">
+            <option value="target">Solo sotto target</option>
+            <option value="any_drop">Ogni calo</option>
+            <option value="any_change">Ogni variazione</option>
+          </select>
+        </div>
+        <div class="sr">
+          <div class="sr-desc">Ricordati di attivarle su ogni dispositivo/browser da cui vuoi ricevere avvisi.</div>
+          <button class="sm-btn" id="sPushTest">Invia prova</button>
+        </div>
+      </div>
+
+      <div class="sg">
+        <div class="sg-title">✨ Riflessi Liquid Glass</div>
+        <div class="sr">
+          <div>
+            <div class="sr-lbl">Movimento dei riflessi</div>
+            <div class="sr-desc" id="motionStatusDesc">Usa il sensore di movimento per far seguire la luce al telefono</div>
+          </div>
+          <button class="sm-btn" id="sMotionEnable">Attiva</button>
+        </div>
+      </div>
+
+      <div class="sg">
+        <div class="sg-title">&#x1F4BE; Dati</div>
+        <div class="sr">
+          <div><div class="sr-lbl">Esporta prodotti</div><div class="sr-desc">Scarica JSON con storico</div></div>
+          <button class="sm-btn" id="sExport">Esporta</button>
+        </div>
+        <div class="sr">
+          <div><div class="sr-lbl">Logout</div><div class="sr-desc">Rimuove token dal dispositivo</div></div>
+          <button class="sm-btn danger" id="sLogout">Esci</button>
+        </div>
+      </div>
+
+      <div class="sg">
+        <div class="sg-title">&#x1F4B3; Abbonamento</div>
+        <div class="sr">
+          <div><div class="sr-lbl">Gestisci abbonamento</div><div class="sr-desc">Modifica o cancella via Stripe</div></div>
+          <button class="sm-btn" id="sPortal">Portale</button>
+        </div>
+      </div>
+
+      <div class="sg">
+        <div class="sg-title">&#x1F511; Chiave gestore</div>
+        <div class="sr" style="flex-wrap:wrap;gap:8px">
+          <input class="key-inp" type="password" id="sAdminKey" placeholder="Inserisci chiave…"/>
+          <button class="sm-btn" id="sKeyApply">Applica</button>
+        </div>
+        <div class="key-st" id="sKeyStatus"></div>
+      </div>
+
+      <div class="ver">Price Watch v2.0 — server-side monitoring via Cloudflare Workers + D1</div>
+    </div>
+  </div>
+
+  <!-- VIEW: Admin -->
+  <div class="view" id="vAdmin">
+    <div class="view-body">
+      <div class="admin-badge">
+        <b>&#x1F6E0;&#xFE0F; Pannello Gestore</b>
+        <span>Accesso autorizzato — tutti i piani sbloccati</span>
+      </div>
+
+      <div class="sg">
+        <div class="sg-title">&#x1F4CA; Statistiche server</div>
+        <div class="stat-grid" id="adminStats">
+          <div class="stat-card"><div class="stat-val">—</div><div class="stat-lbl">Utenti</div></div>
+          <div class="stat-card"><div class="stat-val">—</div><div class="stat-lbl">Prodotti attivi</div></div>
+          <div class="stat-card"><div class="stat-val">—</div><div class="stat-lbl">Voci storico</div></div>
+          <div class="stat-card"><div class="stat-val">—</div><div class="stat-lbl">Errori log</div></div>
+        </div>
+      </div>
+
+      <div class="sg">
+        <div class="sg-title">&#x1F39B;&#xFE0F; Piano utente corrente</div>
+        <div class="sr">
+          <div class="sr-lbl">Piano da sovrascrivere</div>
+          <select class="sel" id="adminPlanSel"><option value="free">Free</option><option value="pro">Pro</option><option value="max">Max</option><option value="god">God ∞</option></select>
+        </div>
+        <div class="sr">
+          <div class="sr-desc">Applica al tuo account (utente corrente)</div>
+          <button class="sm-btn" id="adminApplyPlan">Applica</button>
+        </div>
+      </div>
+
+      <div class="sg">
+        <div class="sg-title">&#x1F4CB; Log esecuzione server</div>
+        <div class="sr">
+          <div><div class="sr-lbl">Mostra log server</div><div class="sr-desc">Ultimi 200 controlli</div></div>
+          <button class="sm-btn" id="adminLoadLog">Carica</button>
+        </div>
+        <div class="admin-log hidden" id="adminLogEl"></div>
+        <div class="sr" id="adminClearRow" style="display:none">
+          <div class="sr-desc">Svuota tutto il log dal server</div>
+          <button class="sm-btn danger" id="adminClearLog">Svuota</button>
+        </div>
+      </div>
+
+      <div class="sg">
+        <div class="sg-title">&#x1F4B3; Configurazione Stripe (locale)</div>
+        <div class="sr-lbl" style="padding:10px 14px 0;font-size:12px;font-weight:600;color:var(--text2)">Publishable Key</div>
+        <input class="wide-inp" id="adminStripeKey" placeholder="pk_live_…"/>
+        <div class="sr-lbl" style="padding:10px 14px 0;font-size:12px;font-weight:600;color:var(--text2)">Customer Portal URL</div>
+        <input class="wide-inp" id="adminPortalUrl" placeholder="https://billing.stripe.com/…"/>
+        <div style="padding:10px 14px">
+          <button class="sm-btn" id="adminSaveStripe" style="width:100%">Salva configurazione</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bnav">
+    <button class="bnav-btn on" data-view="vHome"     onclick="navTo('vHome',this)"><span class="ico">&#x1F4CB;</span>Lista</button>
+    <button class="bnav-btn"   data-view="vPlans"    onclick="navTo('vPlans',this)"><span class="ico">&#x1F48E;</span>Piani</button>
+    <button class="bnav-btn"   data-view="vSettings" onclick="navTo('vSettings',this)"><span class="ico">&#x2699;&#xFE0F;</span>Impostazioni</button>
+    <button class="bnav-btn hidden" id="adminNavBtn" data-view="vAdmin" onclick="navTo('vAdmin',this)"><span class="ico">&#x1F6E0;&#xFE0F;</span>Gestore</button>
+  </div>
+</div>
+
+<!-- Modal: target prezzo / prezzo manuale -->
+<div class="overlay" id="targetModal">
+  <div class="modal">
+    <h3 id="modalTitle">Prodotto trovato</h3>
+    <p id="modalDesc">Prezzo rilevato: <strong id="foundPrice" style="color:var(--green)"></strong><br>A che prezzo vuoi essere avvisato?<br><small style="color:var(--text3)">(lascia vuoto = notifica ad ogni calo)</small></p>
+
+    <!-- Nome prodotto: sempre visibile -->
+    <div style="margin-bottom:10px">
+      <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Nome prodotto (opzionale)</label>
+      <input class="wide-inp" type="text" id="manualTitleInp" placeholder="es. Cuffie Sony WH-1000XM5" style="margin-top:0"/>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Se non scrivi nulla, verrà usato il nome trovato nella pagina (o il link stesso).</div>
+    </div>
+
+    <!-- Mostrato solo quando il prezzo non è stato trovato automaticamente -->
+    <div id="manualPriceRow" style="display:none;margin-bottom:10px">
+      <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Prezzo attuale del prodotto (€)</label>
+      <input class="wide-inp" type="number" id="manualPriceInp" placeholder="es. 129.99" step="0.01" min="0" style="margin-top:0"/>
+    </div>
+
+    <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px" id="targetLabel">Prezzo target (opzionale)</label>
+    <input class="wide-inp" type="number" id="targetInp" placeholder="es. 89.99" step="0.01" min="0" style="margin-top:0"/>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" id="targetCancel">Annulla</button>
+      <button class="btn-ok"     id="targetConfirm">Aggiungi</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: scelta variante di prezzo (es. pagine con più modelli/piattaforme) -->
+<div class="overlay" id="variantModal">
+  <div class="modal">
+    <h3>&#x26A0;&#xFE0F; Più prezzi rilevati</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;text-align:center">Questa pagina mostra più varianti (es. modelli diversi). Scegli quale prezzo monitorare:</p>
+    <div id="variantOptionsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="variantCancel">Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: rinomina prodotto -->
+<div class="overlay" id="renameModal">
+  <div class="modal">
+    <h3>Rinomina prodotto</h3>
+    <input class="wide-inp" type="text" id="renameInp" placeholder="Nome prodotto" style="margin-top:0"/>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="renameCancel">Annulla</button>
+      <button class="btn-ok"     id="renameConfirm">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: crea/rinomina cartella -->
+<div class="overlay" id="folderNameModal">
+  <div class="modal">
+    <h3 id="folderNameModalTitle">Nuova cartella</h3>
+    <input class="wide-inp" type="text" id="folderNameInp" placeholder="Nome cartella" style="margin-top:0" maxlength="40"/>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="folderNameCancel">Annulla</button>
+      <button class="btn-ok"     id="folderNameConfirm">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- Menu "Opzioni" flottante per le cartelle (Rinomina/Elimina) -->
+<div id="floatingFolderMenu">
+  <button data-act="rename-folder">&#x270F;&#xFE0F; Rinomina cartella</button>
+  <button data-act="delete-folder" class="danger">&#x1F5D1;&#xFE0F; Elimina cartella</button>
+</div>
+
+<!-- Modal: modifica prezzo manualmente -->
+<div class="overlay" id="manualPriceEditModal">
+  <div class="modal">
+    <h3>Modifica prezzo manualmente</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:12px;text-align:center">Correggi il prezzo attuale se quello letto automaticamente non è giusto.</p>
+    <input class="wide-inp" type="number" id="manualPriceEditInp" placeholder="es. 129.99" step="0.01" min="0" style="margin-top:0"/>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="manualPriceEditCancel">Annulla</button>
+      <button class="btn-ok"     id="manualPriceEditConfirm">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- Menu "Opzioni" flottante e condiviso (vive fuori dalle card) -->
+<div id="floatingOptionsMenu">
+  <button data-act="history">&#x1F4CA; Storico</button>
+  <button data-act="check">&#x21BB; Aggiorna</button>
+  <button data-act="rename">&#x270F;&#xFE0F; Rinomina</button>
+  <button data-act="manual-price">&#x1F4B0; Modifica prezzo manualmente</button>
+  <button data-act="move-out" class="hidden">&#x2B06;&#xFE0F; Sposta fuori dalla cartella</button>
+  <button data-act="delete" class="danger">&#x1F5D1;&#xFE0F; Rimuovi</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ─────────────────────────────────────────────────────────────────
+// IMPORTANTE: sostituisci con l'URL del tuo Cloudflare Worker dopo il deploy
+const API = (localStorage.getItem("pw_api") || "https://price-watch-backend.price-watch.workers.dev").replace(/\/$/, "");
+const ADMIN_KEY = "Niccolo_Quantistica_2026";
+
+const PLANS = {
+  free: { label:"Free",   max:30,       histDays:7    },
+  pro:  { label:"Pro",    max:70,        histDays:90   },
+  max:  { label:"Max",    max:Infinity,  histDays:1095 },
+  god:  { label:"God ∞",  max:Infinity,  histDays:9999 },
+};
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let token      = localStorage.getItem("pw_token")  || null;
+let userPlan   = localStorage.getItem("pw_plan")   || "free";
+let userId     = localStorage.getItem("pw_userId") || null;
+let products   = [];
+let folders    = [];
+let currentFolderId = null; // cartella attualmente aperta in vFolder, null = si è in vHome
+let chartInst  = null;
+let pendingUrl = null;
+let optionsActiveId = null; // id del prodotto con menu "Opzioni" visibile (persiste finché non si tocca fuori)
+
+// ── API HELPER ─────────────────────────────────────────────────────────────
+async function api(method, path, body = null, adminKey = null) {
+  const headers = { "Content-Type":"application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (adminKey) headers["X-Admin-Key"] = adminKey;
+  const res = await fetch(API + path, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Errore ${res.status}`);
+  return data;
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────────────
+function toast(msg, dur = 2400) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove("show"), dur);
+}
+
+function setStatus(msg, type = "") {
+  const el = document.getElementById("homeStatus");
+  el.textContent = msg;
+  el.className = "statusbar " + type;
+}
+
+// ── VIEWS ──────────────────────────────────────────────────────────────────
+function showView(id) {
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.getElementById(id)?.classList.add("active");
+}
+function navTo(id, btn) {
+  if (id === "vHome") currentFolderId = null;
+  showView(id);
+  document.querySelectorAll(".bnav-btn").forEach(b => b.classList.remove("on"));
+  btn.classList.add("on");
+  if (id === "vPlans")    loadPlans();
+  if (id === "vAdmin")    loadAdmin();
+  if (id === "vSettings") loadSettings();
+}
+
+// ── AUTH ───────────────────────────────────────────────────────────────────
+let authMode = "login";
+document.getElementById("tabLogin").addEventListener("click", () => {
+  authMode = "login";
+  document.getElementById("tabLogin").classList.add("on");
+  document.getElementById("tabRegister").classList.remove("on");
+  document.getElementById("authSubmit").textContent = "Accedi";
+  document.getElementById("authPassword").autocomplete = "current-password";
+});
+document.getElementById("tabRegister").addEventListener("click", () => {
+  authMode = "register";
+  document.getElementById("tabRegister").classList.add("on");
+  document.getElementById("tabLogin").classList.remove("on");
+  document.getElementById("authSubmit").textContent = "Crea account";
+  document.getElementById("authPassword").autocomplete = "new-password";
+});
+
+document.getElementById("authSubmit").addEventListener("click", async () => {
+  const email    = document.getElementById("authEmail").value.trim();
+  const password = document.getElementById("authPassword").value;
+  const errEl    = document.getElementById("authErr");
+  errEl.textContent = "";
+  if (!email || !password) { errEl.textContent = "Compila tutti i campi."; return; }
+
+  const btn = document.getElementById("authSubmit");
+  btn.disabled = true; btn.textContent = "…";
+  try {
+    const path = authMode === "login" ? "/auth/login" : "/auth/register";
+    const data = await api("POST", path, { email, password });
+    token    = data.token;
+    userPlan = data.plan ?? "free";
+    userId   = data.userId;
+    localStorage.setItem("pw_token",  token);
+    localStorage.setItem("pw_plan",   userPlan);
+    localStorage.setItem("pw_userId", userId);
+    bootApp();
+  } catch(e) {
+    errEl.textContent = e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = authMode === "login" ? "Accedi" : "Crea account";
+  }
+});
+
+// ── BOOT ───────────────────────────────────────────────────────────────────
+async function bootApp() {
+  document.getElementById("authWrap").classList.add("hidden");
+  document.getElementById("appWrap").classList.remove("hidden");
+  try {
+    const [prods, fldrs] = await Promise.all([api("GET", "/products"), api("GET", "/folders")]);
+    products = applySavedOrder(prods);
+    folders = fldrs;
+    renderHomeList(true); // animazione d'ingresso dal basso
+    updatePlanStrip();
+  } catch(e) {
+    setStatus("Errore nel caricamento: " + e.message, "err");
+  }
+  if (localStorage.getItem("pw_adminUnlocked") === "1") {
+    document.getElementById("adminNavBtn").classList.remove("hidden");
+  }
+}
+
+// ── PLAN STRIP ─────────────────────────────────────────────────────────────
+function updatePlanStrip() {
+  const pl  = PLANS[userPlan] ?? PLANS.free;
+  const lim = pl.max === Infinity ? "∞" : pl.max;
+  document.getElementById("planLbl").textContent = `Piano ${pl.label}`;
+  document.getElementById("planSub").textContent = `${products.length} / ${lim} prodotti`;
+}
+
+// ── LOAD PRODUCTS + CARTELLE ─────────────────────────────────────────────────
+async function loadProducts() {
+  try {
+    const [prods, fldrs] = await Promise.all([api("GET", "/products"), api("GET", "/folders")]);
+    products = prods;
+    folders = fldrs;
+    refreshCurrentProductView();
+    updatePlanStrip();
+  } catch(e) {
+    setStatus("Errore nel caricamento: " + e.message, "err");
+  }
+}
+
+// ── RENDER PRODUCTS ────────────────────────────────────────────────────────
+function relTime(ms) {
+  const d = Date.now() - ms, m = Math.round(d/60000);
+  if (m < 1)  return "adesso";
+  if (m < 60) return `${m} min fa`;
+  const h = Math.round(m/60);
+  if (h < 24) return `${h} h fa`;
+  return `${Math.round(h/24)} g fa`;
+}
+
+// ── COSTRUZIONE CARD PRODOTTO (riusata da vHome e da vFolder) ───────────────
+function buildProductCard(p, animateEntrance, index, inFolderView) {
+  const card = document.createElement("div");
+  card.className = "prod-card";
+  card.dataset.id = p.id;
+  card.dataset.type = "product";
+  if (optionsActiveId === p.id) card.classList.add("options-active");
+
+  // Worker restituisce camelCase: currentPrice, targetPrice, lastCheckedAt, lastCheckError
+  const price  = p.currentPrice  ?? p.current_price;
+  const target = p.targetPrice   ?? p.target_price;
+  const checkedAt = p.lastCheckedAt ?? p.last_checked_at;
+  const checkErr  = p.lastCheckError ?? p.last_check_error;
+
+  let checkHtml = "";
+  if (checkErr) {
+    checkHtml = `<div class="prod-check err">⚠️ ${checkErr}</div>`;
+  } else if (checkedAt) {
+    checkHtml = `<div class="prod-check ok">Controllato ${relTime(checkedAt)} dal server</div>`;
+  } else {
+    checkHtml = `<div class="prod-check ok" style="color:var(--text3)">In attesa del primo controllo server…</div>`;
+  }
+
+  const pendingVariants = p.pendingVariants;
+  const variantBannerHtml = (pendingVariants && pendingVariants.length >= 2)
+    ? `<button class="variant-banner-btn" data-id="${p.id}">⚠️ Più prezzi rilevati — tocca per scegliere</button>`
+    : "";
+
+  card.innerHTML = `
+    <div class="prod-head">
+      <a class="prod-name" href="${p.url}" target="_blank" rel="noopener">${p.title || p.url}</a>
+      <div class="prod-price">${price != null ? price.toFixed(2)+"€" : "—"}</div>
+      <div class="prod-target">Target: ${target ? target.toFixed(2)+"€" : "non impostato"}</div>
+      ${checkHtml}
+      ${variantBannerHtml}
+    </div>
+    <div class="prod-options-wrap">
+      <button class="prod-options-trigger" data-id="${p.id}">Opzioni <span class="opt-arrow">▾</span></button>
+    </div>`;
+
+  if (pendingVariants && pendingVariants.length >= 2) {
+    card.querySelector(".variant-banner-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      openVariantModal(pendingVariants, { productId: p.id });
+    });
+  }
+
+  const optionsTrigger = card.querySelector(".prod-options-trigger");
+  optionsTrigger.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isEditMode) return;
+    toggleFloatingMenu(card, p.id, inFolderView);
+  });
+
+  // Un tap sulla card rivela la riga "Opzioni". Il menu flottante si apre
+  // solo con il tap successivo sulla voce Opzioni, evitando conflitti con il drag.
+  card.addEventListener("click", (e) => {
+    if (isEditMode || e.target.closest("a, button")) return;
+    e.stopPropagation();
+    if (optionsActiveId === p.id) return;
+    closeAllOptionsMode();
+    optionsActiveId = p.id;
+    card.classList.add("options-active");
+  });
+
+  if (animateEntrance) {
+    card.classList.add("entrance");
+    card.style.animationDelay = (index * 70) + "ms";
+    card.addEventListener("animationend", () => {
+      card.classList.remove("entrance");
+      card.style.animationDelay = "";
+    }, { once: true });
+  }
+
+  return card;
+}
+
+// ── COSTRUZIONE CARD CARTELLA ────────────────────────────────────────────────
+function buildFolderCard(f, animateEntrance, index) {
+  const card = document.createElement("div");
+  card.className = "folder-card";
+  card.dataset.id = f.id;
+  card.dataset.type = "folder";
+  if (optionsActiveId === f.id) card.classList.add("options-active");
+
+  const count = products.filter(p => (p.folderId ?? p.folder_id) === f.id).length;
+
+  const hasProducts = count > 0;
+  card.classList.toggle("has-products", hasProducts);
+  card.classList.toggle("folder-empty", !hasProducts);
+
+  card.innerHTML = `
+    <div class="folder-card-inner">
+      <div class="folder-glass-tab"></div>
+      ${hasProducts ? '<div class="folder-body-fill"></div>' : ''}
+      <div class="folder-label">
+        <div class="folder-name">${f.name}</div>
+        <div class="folder-count">${count} prodott${count === 1 ? "o" : "i"}</div>
+      </div>
+    </div>`;
+
+  card.addEventListener("click", () => {
+    if (card.dataset.justDragged === "1") return;
+    openFolderView(f.id);
+  });
+
+  if (animateEntrance) {
+    card.classList.add("entrance");
+    card.style.animationDelay = (index * 70) + "ms";
+    card.addEventListener("animationend", () => {
+      card.classList.remove("entrance");
+      card.style.animationDelay = "";
+    }, { once: true });
+  }
+
+  return card;
+}
+
+// ── VISTA PRINCIPALE: cartelle + prodotti sciolti in un'unica lista ─────────
+function renderHomeList(animateEntrance = false) {
+  hideFloatingMenu();
+  hideFloatingFolderMenu();
+  const list  = document.getElementById("prodList");
+  const empty = document.getElementById("emptyState");
+  list.innerHTML = "";
+
+  const looseProducts = products.filter(p => !(p.folderId ?? p.folder_id));
+  const items = [
+    ...folders.map(f => ({ id: f.id, type: "folder", data: f })),
+    ...looseProducts.map(p => ({ id: p.id, type: "product", data: p })),
+  ];
+  const ordered = applyHomeOrder(items);
+
+  if (ordered.length === 0) { empty.classList.remove("hidden"); return; }
+  empty.classList.add("hidden");
+
+  ordered.forEach((item, index) => {
+    const card = item.type === "folder"
+      ? buildFolderCard(item.data, animateEntrance, index)
+      : buildProductCard(item.data, animateEntrance, index, false);
+    attachHomeDragHandlers(card, item.id, item.type);
+    list.appendChild(card);
+  });
+}
+
+// ── VISTA CARTELLA ────────────────────────────────────────────────────────────
+function openFolderView(folderId) {
+  currentFolderId = folderId;
+  const folder = folders.find(f => f.id === folderId);
+  document.getElementById("folderViewTitle").textContent = folder ? folder.name : "Cartella";
+  showView("vFolder");
+  renderFolderView();
+}
+
+function closeFolderView() {
+  currentFolderId = null;
+  showView("vHome");
+}
+
+function renderFolderView(animateEntrance = false) {
+  hideFloatingMenu();
+  const list  = document.getElementById("folderProdList");
+  const empty = document.getElementById("folderEmptyState");
+  list.innerHTML = "";
+
+  const items = products.filter(p => (p.folderId ?? p.folder_id) === currentFolderId);
+  const ordered = applyFolderOrder(currentFolderId, items);
+
+  if (ordered.length === 0) { empty.classList.remove("hidden"); }
+  else { empty.classList.add("hidden"); }
+
+  ordered.forEach((p, index) => {
+    const card = buildProductCard(p, animateEntrance, index, true);
+    attachFolderDragHandlers(card, p.id);
+    list.appendChild(card);
+  });
+}
+
+// Ridisegna qualunque vista (Home o Cartella) sia attualmente aperta, dopo
+// un'azione su un prodotto (rinomina, aggiorna, elimina, ecc.).
+function refreshCurrentProductView() {
+  if (currentFolderId) renderFolderView(false);
+  else renderHomeList(false);
+}
+
+// ── MODALITÀ SPOSTAMENTO ────────────────────────────────────────────────────
+let isEditMode = false;
+const toggleMoveBtn = document.getElementById("toggleMoveBtn");
+
+function setEditMode(enabled) {
+  isEditMode = !!enabled;
+  const app = document.getElementById("appWrap");
+  const home = document.getElementById("vHome");
+  const folder = document.getElementById("vFolder");
+  const btn = toggleMoveBtn;
+  app.classList.toggle("edit-mode", isEditMode);
+  home.classList.toggle("lock-scroll", isEditMode);
+  if (folder) folder.classList.toggle("lock-scroll", isEditMode);
+  btn.classList.toggle("active", isEditMode);
+  btn.setAttribute("aria-pressed", isEditMode ? "true" : "false");
+  if (isEditMode) {
+    closeAllOptionsMode();
+    toast("Modalità spostamento attiva — tieni premuto e trascina");
+  } else {
+    toast("Modalità spostamento disattivata");
+  }
+}
+
+toggleMoveBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  setEditMode(!isEditMode);
+});
+
+// ── MENU "OPZIONI" FLOTTANTE (PRODOTTI) ──────────────────────────────────────
+// Un unico elemento condiviso (fuori dalle card, che hanno overflow:hidden per
+// gli angoli arrotondati) così può comparire SOPRA il prodotto senza essere
+// tagliato, con la stessa dissolvenza usata per lo splash screen.
+const floatingMenu = document.getElementById("floatingOptionsMenu");
+let floatingMenuProductId = null;
+
+floatingMenu.querySelectorAll("[data-act]").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const id = floatingMenuProductId;
+    hideFloatingMenu();
+    if (id) handleProductAction(btn.dataset.act, id);
+  });
+});
+
+function positionMenuAbove(menuEl, card) {
+  const rect = card.getBoundingClientRect();
+  menuEl.style.width = rect.width + "px";
+  menuEl.style.left = rect.left + "px";
+
+  // Misura l'altezza reale del menu (già nel DOM, solo invisibile) per
+  // sapere quanto spazio serve sopra la card.
+  const menuHeight = menuEl.offsetHeight || 200;
+  const gap = 8;
+  let top = rect.top - menuHeight - gap;
+
+  // Se sopra il prodotto non c'è abbastanza spazio (card vicina alla cima
+  // dello schermo), il menu compare sotto invece che sopra.
+  if (top < 8) top = rect.bottom + gap;
+
+  menuEl.style.top = top + "px";
+}
+
+function toggleFloatingMenu(card, productId, inFolderView) {
+  const trigger = card.querySelector(".prod-options-trigger");
+  const wasOpenForThis = floatingMenu.classList.contains("open") && floatingMenuProductId === productId;
+
+  hideFloatingMenu();
+  if (wasOpenForThis) return; // era già aperto per questa card → richiudi soltanto
+
+  // Il pulsante "Sposta fuori dalla cartella" compare solo quando si sta
+  // guardando dentro una cartella.
+  const moveOutBtn = floatingMenu.querySelector('[data-act="move-out"]');
+  if (moveOutBtn) moveOutBtn.classList.toggle("hidden", !inFolderView);
+
+  floatingMenuProductId = productId;
+  positionMenuAbove(floatingMenu, card);
+  floatingMenu.classList.add("open");
+  trigger.classList.add("menu-open");
+}
+
+function hideFloatingMenu() {
+  floatingMenu.classList.remove("open");
+  document.querySelectorAll(".prod-options-trigger.menu-open").forEach(t => t.classList.remove("menu-open"));
+  floatingMenuProductId = null;
+}
+
+// ── MENU "OPZIONI" FLOTTANTE (CARTELLE) ──────────────────────────────────────
+const floatingFolderMenu = document.getElementById("floatingFolderMenu");
+let floatingFolderMenuId = null;
+
+floatingFolderMenu.querySelectorAll("[data-act]").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const id = floatingFolderMenuId;
+    hideFloatingFolderMenu();
+    if (!id) return;
+    if (btn.dataset.act === "rename-folder") openFolderNameModal(id);
+    if (btn.dataset.act === "delete-folder") deleteFolder(id);
+  });
+});
+
+function toggleFloatingFolderMenu(card, folderId) {
+  const wasOpenForThis = floatingFolderMenu.classList.contains("open") && floatingFolderMenuId === folderId;
+  hideFloatingFolderMenu();
+  if (wasOpenForThis) return;
+  floatingFolderMenuId = folderId;
+  positionMenuAbove(floatingFolderMenu, card);
+  floatingFolderMenu.classList.add("open");
+}
+
+function hideFloatingFolderMenu() {
+  floatingFolderMenu.classList.remove("open");
+  floatingFolderMenuId = null;
+}
+
+// Chiude completamente la modalità opzioni/spostamento su tutte le card
+// (nasconde anche il pulsante "Opzioni" e i menu flottanti se aperti):
+// usato quando si tocca fuori da qualunque prodotto, cartella o menu.
+function closeAllOptionsMode() {
+  optionsActiveId = null;
+  hideFloatingMenu();
+  hideFloatingFolderMenu();
+  document.querySelectorAll(".prod-card.options-active, .folder-card.options-active").forEach(c => {
+    c.classList.remove("options-active");
+  });
+}
+
+// Tocco fuori da qualunque card, cartella o menu flottante → chiude tutto
+document.addEventListener("pointerdown", (e) => {
+  if (e.target.closest(".prod-card") || e.target.closest(".folder-card") ||
+      e.target.closest("#floatingOptionsMenu") || e.target.closest("#floatingFolderMenu")) return;
+  closeAllOptionsMode();
+});
+
+// ── DRAG & REORDER (stile iOS: tieni premuto, trascina, rilascia) ──────────
+const LONG_PRESS_MS  = 420;
+const MOVE_CANCEL_PX = 10;
+const CARD_GAP_PX    = 10; // deve combaciare con margin-bottom di .prod-card/.folder-card
+
+// ── Home: riordina cartelle+prodotti sciolti, oppure sposta un prodotto
+// dentro una cartella se viene rilasciato sopra di essa ──────────────────────
+function attachHomeDragHandlers(card, itemId, itemType) {
+  let pressTimer  = null;
+  let startX = 0, startY = 0;
+  let dragging    = false;
+  let order       = [];
+  let startIndex  = 0;
+  let currentIndex = 0;
+  let cardHeight  = 0;
+  let pointerId   = null;
+  let hoveredFolderId = null;
+
+  function cleanupPreDrag() {
+    card.removeEventListener("pointermove", onPreMove);
+    card.removeEventListener("pointerup", onPreUp);
+    card.removeEventListener("pointercancel", onPreUp);
+  }
+  function onPreMove(e) {
+    if (Math.abs(e.clientX - startX) > MOVE_CANCEL_PX || Math.abs(e.clientY - startY) > MOVE_CANCEL_PX) {
+      clearTimeout(pressTimer);
+      cleanupPreDrag();
+    }
+  }
+  function onPreUp() {
+    clearTimeout(pressTimer);
+    cleanupPreDrag();
+  }
+
+  function onPointerDown(e) {
+    if (!isEditMode) return;
+    if (e.target.closest("button, a")) return; // non rubare i tap sui pulsanti/link
+    const list = document.getElementById("prodList");
+    if (list.children.length < 2) return; // niente da riordinare
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    startX = e.clientX; startY = e.clientY;
+    pointerId = e.pointerId;
+    pressTimer = setTimeout(() => beginDrag(e), LONG_PRESS_MS);
+    card.addEventListener("pointermove", onPreMove);
+    card.addEventListener("pointerup", onPreUp);
+    card.addEventListener("pointercancel", onPreUp);
+  }
+
+  function beginDrag(e) {
+    cleanupPreDrag();
+    dragging = true;
+    try { card.setPointerCapture(pointerId); } catch {}
+
+    // Se l'elemento aveva già il menu "Opzioni" visibile, lo richiudiamo
+    // prima di misurare l'altezza della card: così il trascinamento resta
+    // preciso (tutte le card vengono misurate nella loro forma "compatta").
+    card.classList.remove("options-active");
+    if (itemType === "product" && floatingMenuProductId === itemId) hideFloatingMenu();
+    if (itemType === "folder" && floatingFolderMenuId === itemId) hideFloatingFolderMenu();
+    if (optionsActiveId === itemId) optionsActiveId = null;
+
+    const list  = document.getElementById("prodList");
+    const cards = [...list.children];
+    order        = cards.map(c => c.dataset.id);
+    startIndex   = order.indexOf(itemId);
+    currentIndex = startIndex;
+
+    const rect = card.getBoundingClientRect();
+    cardHeight = rect.height + CARD_GAP_PX;
+
+    card.classList.add("dragging");
+    card.style.zIndex = "50";
+    card.style.transition = "none";
+    card.style.touchAction = "none";
+
+    if (navigator.vibrate) navigator.vibrate(10); // piccolo feedback tattile
+
+    document.addEventListener("pointermove", onDragMove);
+    document.addEventListener("pointerup", onDragEnd);
+    document.addEventListener("pointercancel", onDragEnd);
+  }
+
+  function onDragMove(e) {
+    if (!dragging) return;
+    const dy = e.clientY - startY;
+    card.style.transform = `translateY(${dy}px) scale(1.03)`;
+
+    const newIndex = Math.min(order.length - 1, Math.max(0, Math.round(startIndex + dy / cardHeight)));
+    if (newIndex !== currentIndex) {
+      currentIndex = newIndex;
+      applyShifts();
+    }
+
+    // Solo un PRODOTTO può essere trascinato dentro una cartella (le
+    // cartelle non si annidano tra loro).
+    if (itemType === "product") {
+      const list = document.getElementById("prodList");
+      let newHoverId = null;
+      list.querySelectorAll(".folder-card").forEach(fc => {
+        if (fc === card) return;
+        const r = fc.getBoundingClientRect();
+        if (e.clientY >= r.top && e.clientY <= r.bottom) newHoverId = fc.dataset.id;
+      });
+      if (newHoverId !== hoveredFolderId) {
+        if (hoveredFolderId) {
+          const prevEl = list.querySelector(`.folder-card[data-id="${hoveredFolderId}"]`);
+          if (prevEl) prevEl.classList.remove("drop-target");
+        }
+        if (newHoverId) {
+          const newEl = list.querySelector(`.folder-card[data-id="${newHoverId}"]`);
+          if (newEl) newEl.classList.add("drop-target");
+        }
+        hoveredFolderId = newHoverId;
+      }
+    }
+  }
+
+  function applyShifts() {
+    const list  = document.getElementById("prodList");
+    const cards = [...list.children];
+    cards.forEach((c) => {
+      if (c === card) return;
+      const origIndex = order.indexOf(c.dataset.id);
+      let shift = 0;
+      if (currentIndex < startIndex && origIndex >= currentIndex && origIndex < startIndex) {
+        shift = cardHeight;
+      } else if (currentIndex > startIndex && origIndex > startIndex && origIndex <= currentIndex) {
+        shift = -cardHeight;
+      }
+      c.style.transition = "transform 200ms ease";
+      c.style.transform = shift ? `translateY(${shift}px)` : "";
+    });
+  }
+
+  async function onDragEnd() {
+    if (!dragging) return;
+    dragging = false;
+    document.removeEventListener("pointermove", onDragMove);
+    document.removeEventListener("pointerup", onDragEnd);
+    document.removeEventListener("pointercancel", onDragEnd);
+
+    card.classList.remove("dragging");
+    card.style.zIndex = "";
+    card.style.transition = "";
+    card.style.transform = "";
+    card.style.touchAction = "";
+
+    const list = document.getElementById("prodList");
+    list.querySelectorAll(".folder-card.drop-target").forEach(el => el.classList.remove("drop-target"));
+
+    if (itemType === "product" && hoveredFolderId) {
+      // Rilasciato sopra una cartella → sposta il prodotto dentro,
+      // invece di riordinarlo semplicemente nella lista principale.
+      const targetFolderId = hoveredFolderId;
+      hoveredFolderId = null;
+      try {
+        const updated = await api("PATCH", `/products/${itemId}`, { folderId: targetFolderId });
+        const idx = products.findIndex(x => x.id === itemId);
+        if (idx !== -1) products[idx] = updated;
+        toast("Prodotto spostato nella cartella ✓");
+      } catch(err) { toast("Errore: " + err.message); }
+      renderHomeList(false);
+      return;
+    }
+    hoveredFolderId = null;
+
+    const newOrderIds = [...order];
+    newOrderIds.splice(startIndex, 1);
+    newOrderIds.splice(currentIndex, 0, itemId);
+    saveOrder(newOrderIds);
+
+    // Dopo un riordino lasciamo la card compatta: Opzioni compare solo con un tap.
+    optionsActiveId = null;
+    card.dataset.justDragged = "1";
+    setTimeout(() => { if (card.dataset) card.dataset.justDragged = "0"; }, 50);
+
+    renderHomeList(false);
+  }
+
+  card.addEventListener("pointerdown", onPointerDown);
+}
+
+// ── Cartella aperta: riordina i prodotti al suo interno, oppure trascina
+// verso l'alto (oltre l'intestazione) per farlo uscire dalla cartella ───────
+function attachFolderDragHandlers(card, productId) {
+  let pressTimer  = null;
+  let startX = 0, startY = 0;
+  let dragging    = false;
+  let order       = [];
+  let startIndex  = 0;
+  let currentIndex = 0;
+  let cardHeight  = 0;
+  let pointerId   = null;
+  let ejecting    = false;
+
+  function cleanupPreDrag() {
+    card.removeEventListener("pointermove", onPreMove);
+    card.removeEventListener("pointerup", onPreUp);
+    card.removeEventListener("pointercancel", onPreUp);
+  }
+  function onPreMove(e) {
+    if (Math.abs(e.clientX - startX) > MOVE_CANCEL_PX || Math.abs(e.clientY - startY) > MOVE_CANCEL_PX) {
+      clearTimeout(pressTimer);
+      cleanupPreDrag();
+    }
+  }
+  function onPreUp() {
+    clearTimeout(pressTimer);
+    cleanupPreDrag();
+  }
+
+  function onPointerDown(e) {
+    if (!isEditMode) return;
+    if (e.target.closest("button, a")) return;
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    startX = e.clientX; startY = e.clientY;
+    pointerId = e.pointerId;
+    pressTimer = setTimeout(() => beginDrag(e), LONG_PRESS_MS);
+    card.addEventListener("pointermove", onPreMove);
+    card.addEventListener("pointerup", onPreUp);
+    card.addEventListener("pointercancel", onPreUp);
+  }
+
+  function beginDrag(e) {
+    cleanupPreDrag();
+    dragging = true;
+    try { card.setPointerCapture(pointerId); } catch {}
+
+    card.classList.remove("options-active");
+    if (floatingMenuProductId === productId) hideFloatingMenu();
+    if (optionsActiveId === productId) optionsActiveId = null;
+
+    const list  = document.getElementById("folderProdList");
+    const cards = [...list.children];
+    order        = cards.map(c => c.dataset.id);
+    startIndex   = order.indexOf(productId);
+    currentIndex = startIndex;
+
+    const rect = card.getBoundingClientRect();
+    cardHeight = rect.height + CARD_GAP_PX;
+
+    card.classList.add("dragging");
+    card.style.zIndex = "50";
+    card.style.transition = "none";
+    card.style.touchAction = "none";
+
+    document.getElementById("folderEjectZone").classList.add("active");
+
+    if (navigator.vibrate) navigator.vibrate(10);
+
+    document.addEventListener("pointermove", onDragMove);
+    document.addEventListener("pointerup", onDragEnd);
+    document.addEventListener("pointercancel", onDragEnd);
+  }
+
+  function onDragMove(e) {
+    if (!dragging) return;
+    const dy = e.clientY - startY;
+    card.style.transform = `translateY(${dy}px) scale(1.03)`;
+
+    const ejectZone = document.getElementById("folderEjectZone");
+    const zoneRect = ejectZone.getBoundingClientRect();
+    const overZone = e.clientY <= zoneRect.bottom;
+    if (overZone !== ejecting) {
+      ejecting = overZone;
+      ejectZone.classList.toggle("hover", ejecting);
+    }
+
+    if (ejecting) return; // sopra la zona di espulsione → non riordiniamo la lista
+
+    const newIndex = Math.min(order.length - 1, Math.max(0, Math.round(startIndex + dy / cardHeight)));
+    if (newIndex !== currentIndex) {
+      currentIndex = newIndex;
+      applyShifts();
+    }
+  }
+
+  function applyShifts() {
+    const list  = document.getElementById("folderProdList");
+    const cards = [...list.children];
+    cards.forEach((c) => {
+      if (c === card) return;
+      const origIndex = order.indexOf(c.dataset.id);
+      let shift = 0;
+      if (currentIndex < startIndex && origIndex >= currentIndex && origIndex < startIndex) {
+        shift = cardHeight;
+      } else if (currentIndex > startIndex && origIndex > startIndex && origIndex <= currentIndex) {
+        shift = -cardHeight;
+      }
+      c.style.transition = "transform 200ms ease";
+      c.style.transform = shift ? `translateY(${shift}px)` : "";
+    });
+  }
+
+  async function onDragEnd() {
+    if (!dragging) return;
+    dragging = false;
+    document.removeEventListener("pointermove", onDragMove);
+    document.removeEventListener("pointerup", onDragEnd);
+    document.removeEventListener("pointercancel", onDragEnd);
+
+    card.classList.remove("dragging");
+    card.style.zIndex = "";
+    card.style.transition = "";
+    card.style.transform = "";
+    card.style.touchAction = "";
+
+    const ejectZone = document.getElementById("folderEjectZone");
+    ejectZone.classList.remove("active", "hover");
+
+    if (ejecting) {
+      ejecting = false;
+      try {
+        const updated = await api("PATCH", `/products/${productId}`, { folderId: null });
+        const idx = products.findIndex(x => x.id === productId);
+        if (idx !== -1) products[idx] = updated;
+        toast("Prodotto spostato fuori dalla cartella ✓");
+      } catch(err) { toast("Errore: " + err.message); }
+      renderFolderView(false);
+      return;
+    }
+
+    const newOrderIds = [...order];
+    newOrderIds.splice(startIndex, 1);
+    newOrderIds.splice(currentIndex, 0, productId);
+    saveFolderOrder(currentFolderId, newOrderIds);
+
+    optionsActiveId = null;
+    renderFolderView(false);
+  }
+
+  card.addEventListener("pointerdown", onPointerDown);
+}
+
+function orderStorageKey() {
+  return `pw_order_${userId || "anon"}`;
+}
+function saveOrder(ids) {
+  try { localStorage.setItem(orderStorageKey(), JSON.stringify(ids)); } catch {}
+}
+// Mette un prodotto appena aggiunto in cima all'ordine della Home, mantenendo
+// l'ordine esistente di cartelle+prodotti sciolti per il resto.
+function pinNewProductToTopOfHome(productId) {
+  const looseProducts = products.filter(p => !(p.folderId ?? p.folder_id) && p.id !== productId);
+  const items = [...folders.map(f => ({ id: f.id })), ...looseProducts.map(p => ({ id: p.id }))];
+  const ordered = applyHomeOrder(items).map(it => it.id);
+  saveOrder([productId, ...ordered]);
+}
+function applyHomeOrder(items) {
+  let saved = [];
+  try { saved = JSON.parse(localStorage.getItem(orderStorageKey()) || "[]"); } catch {}
+  if (!saved.length) return items;
+  const byId = new Map(items.map(it => [it.id, it]));
+  const ordered = [];
+  saved.forEach(id => { if (byId.has(id)) { ordered.push(byId.get(id)); byId.delete(id); } });
+  byId.forEach(it => ordered.push(it)); // elementi nuovi non ancora nell'ordine salvato → in coda
+  return ordered;
+}
+// Alias mantenuto per compatibilità con chi ancora chiama applySavedOrder
+// sull'elenco grezzo dei prodotti (nessun riordino qui: l'ordine vero e
+// proprio viene applicato in renderHomeList tramite applyHomeOrder).
+function applySavedOrder(list) {
+  return list;
+}
+
+function folderOrderStorageKey(folderId) {
+  return `pw_folder_order_${userId || "anon"}_${folderId}`;
+}
+function saveFolderOrder(folderId, ids) {
+  try { localStorage.setItem(folderOrderStorageKey(folderId), JSON.stringify(ids)); } catch {}
+}
+function applyFolderOrder(folderId, items) {
+  let saved = [];
+  try { saved = JSON.parse(localStorage.getItem(folderOrderStorageKey(folderId)) || "[]"); } catch {}
+  if (!saved.length) return items;
+  const byId = new Map(items.map(p => [p.id, p]));
+  const ordered = [];
+  saved.forEach(id => { if (byId.has(id)) { ordered.push(byId.get(id)); byId.delete(id); } });
+  byId.forEach(p => ordered.push(p));
+  return ordered;
+}
+
+// ── GESTIONE CARTELLE: crea, rinomina, elimina ──────────────────────────────
+document.getElementById("newFolderBtn").addEventListener("click", () => openFolderNameModal(null));
+
+function openFolderNameModal(folderId) {
+  const isNew = !folderId;
+  document.getElementById("folderNameModalTitle").textContent = isNew ? "Nuova cartella" : "Rinomina cartella";
+  const folder = !isNew ? folders.find(f => f.id === folderId) : null;
+  document.getElementById("folderNameInp").value = folder ? folder.name : "";
+  document.getElementById("folderNameConfirm").dataset.folderId = folderId || "";
+  document.getElementById("folderNameModal").classList.add("open");
+}
+document.getElementById("folderNameCancel").addEventListener("click", () => {
+  document.getElementById("folderNameModal").classList.remove("open");
+});
+document.getElementById("folderNameConfirm").addEventListener("click", async () => {
+  const folderId = document.getElementById("folderNameConfirm").dataset.folderId;
+  const name = document.getElementById("folderNameInp").value.trim();
+  if (!name) { toast("Il nome non può essere vuoto"); return; }
+  document.getElementById("folderNameModal").classList.remove("open");
+  try {
+    if (folderId) {
+      const updated = await api("PATCH", `/folders/${folderId}`, { name });
+      const idx = folders.findIndex(f => f.id === folderId);
+      if (idx !== -1) folders[idx] = updated;
+      if (currentFolderId === folderId) document.getElementById("folderViewTitle").textContent = updated.name;
+      toast("Cartella rinominata ✓");
+    } else {
+      const created = await api("POST", "/folders", { name });
+      folders.unshift(created);
+      toast("Cartella creata ✓");
+    }
+    renderHomeList(false);
+  } catch(e) { toast("Errore: " + e.message); }
+});
+
+async function deleteFolder(folderId) {
+  const folder = folders.find(f => f.id === folderId);
+  if (!confirm(`Eliminare la cartella "${folder ? folder.name : ""}"? I prodotti al suo interno non verranno cancellati, torneranno semplicemente fuori.`)) return;
+  try {
+    await api("DELETE", `/folders/${folderId}`);
+    folders = folders.filter(f => f.id !== folderId);
+    // I prodotti che erano dentro tornano fuori anche localmente
+    products.forEach(p => { if ((p.folderId ?? p.folder_id) === folderId) p.folderId = null; });
+    if (currentFolderId === folderId) { currentFolderId = null; showView("vHome"); }
+    renderHomeList(false);
+    toast("Cartella eliminata");
+  } catch(e) { toast("Errore: " + e.message); }
+}
+
+async function handleProductAction(act, id) {
+  const p = products.find(x => x.id === id);
+  if (act === "history") { await openHistory(p); return; }
+  if (act === "delete") {
+    if (!confirm("Rimuovere questo prodotto?")) return;
+    try {
+      await api("DELETE", `/products/${id}`);
+      products = products.filter(x => x.id !== id);
+      refreshCurrentProductView(); updatePlanStrip(); toast("Prodotto rimosso");
+    } catch(e) { toast("Errore: " + e.message); }
+    return;
+  }
+  if (act === "check") {
+    setStatus("Aggiornamento prezzo in corso…");
+    try {
+      const result = await api("POST", `/products/${id}/check-now`);
+      const updated = result.product;
+      if (updated) {
+        const idx = products.findIndex(x => x.id === id);
+        if (idx !== -1) products[idx] = updated;
+        refreshCurrentProductView();
+      }
+      if (result.ok) {
+        setStatus("Prezzo aggiornato ✓", "ok");
+      } else {
+        setStatus(result.message || "Impossibile aggiornare il prezzo", "err");
+      }
+      setTimeout(() => setStatus(""), 2500);
+    } catch(e) { setStatus("Errore: " + e.message, "err"); }
+    return;
+  }
+  if (act === "rename") { openRenameModal(p); return; }
+  if (act === "manual-price") { openManualPriceEditModal(p); return; }
+  if (act === "move-out") {
+    try {
+      const updated = await api("PATCH", `/products/${id}`, { folderId: null });
+      const idx = products.findIndex(x => x.id === id);
+      if (idx !== -1) products[idx] = updated;
+      toast("Prodotto spostato fuori dalla cartella ✓");
+      refreshCurrentProductView();
+    } catch(e) { toast("Errore: " + e.message); }
+    return;
+  }
+}
+
+// ── RINOMINA PRODOTTO ─────────────────────────────────────────────────────────
+function openRenameModal(p) {
+  document.getElementById("renameInp").value = p.title || "";
+  document.getElementById("renameConfirm").dataset.id = p.id;
+  document.getElementById("renameModal").classList.add("open");
+}
+document.getElementById("renameCancel").addEventListener("click", () => {
+  document.getElementById("renameModal").classList.remove("open");
+});
+document.getElementById("renameConfirm").addEventListener("click", async () => {
+  const id = document.getElementById("renameConfirm").dataset.id;
+  const newTitle = document.getElementById("renameInp").value.trim();
+  if (!newTitle) { toast("Il nome non può essere vuoto"); return; }
+  document.getElementById("renameModal").classList.remove("open");
+  try {
+    const updated = await api("PATCH", `/products/${id}`, { title: newTitle });
+    const idx = products.findIndex(x => x.id === id);
+    if (idx !== -1) products[idx] = updated;
+    refreshCurrentProductView();
+    toast("Nome aggiornato ✓");
+  } catch(e) { toast("Errore: " + e.message); }
+});
+
+// ── MODIFICA PREZZO MANUALMENTE ───────────────────────────────────────────────
+function openManualPriceEditModal(p) {
+  const price = p.currentPrice ?? p.current_price;
+  document.getElementById("manualPriceEditInp").value = price != null ? price.toFixed(2) : "";
+  document.getElementById("manualPriceEditConfirm").dataset.id = p.id;
+  document.getElementById("manualPriceEditModal").classList.add("open");
+}
+document.getElementById("manualPriceEditCancel").addEventListener("click", () => {
+  document.getElementById("manualPriceEditModal").classList.remove("open");
+});
+document.getElementById("manualPriceEditConfirm").addEventListener("click", async () => {
+  const id = document.getElementById("manualPriceEditConfirm").dataset.id;
+  const v = parseFloat(document.getElementById("manualPriceEditInp").value.replace(",", "."));
+  if (isNaN(v) || v <= 0) { toast("Inserisci un prezzo valido"); return; }
+  document.getElementById("manualPriceEditModal").classList.remove("open");
+  try {
+    const updated = await api("PATCH", `/products/${id}`, { currentPrice: v });
+    const idx = products.findIndex(x => x.id === id);
+    if (idx !== -1) products[idx] = updated;
+    refreshCurrentProductView();
+    toast("Prezzo aggiornato ✓");
+  } catch(e) { toast("Errore: " + e.message); }
+});
+
+// ── FETCH PREZZO SERVER-SIDE (via Worker, niente proxy pubblici) ─────────────
+async function clientFetchPrice(url) {
+  const data = await api("POST", "/products/preview", { url });
+  if (data.error && data.price === null && !data.variants) throw new Error(data.error);
+  return { price: data.price, title: data.title, variants: data.variants || null };
+}
+
+// ── ADD PRODUCT ─────────────────────────────────────────────────────────────
+document.getElementById("addBtn").addEventListener("click", async () => {
+  const pl  = PLANS[userPlan] ?? PLANS.free;
+  if (pl.max !== Infinity && products.length >= pl.max) {
+    navTo("vPlans", document.querySelector('[data-view="vPlans"]'));
+    toast("Limite raggiunto — aggiorna il piano");
+    return;
+  }
+  const url = document.getElementById("urlInp").value.trim();
+  if (!url.startsWith("http")) { toast("Inserisci un URL valido"); return; }
+
+  const btn = document.getElementById("addBtn");
+  btn.disabled = true; btn.textContent = "…";
+  setStatus("Recupero prezzo in corso…");
+  try {
+    // 1) Prova a recuperare prezzo e titolo dal server
+    let price = null, title = null, serverErrMsg = null, variants = null;
+    try {
+      const result = await clientFetchPrice(url);
+      price = result.price;
+      title = result.title;
+      variants = result.variants;
+    } catch(e) {
+      // fetch/estrazione fallita (sito con protezione anti-bot, oppure
+      // ore gratuite di Browser Run esaurite) → prezzo resta null,
+      // ma teniamo il messaggio specifico del server per mostrarlo
+      serverErrMsg = e.message;
+    }
+
+    setStatus("");
+
+    // La pagina mostra più varianti (es. modelli/piattaforme diverse) →
+    // chiediamo all'utente quale prezzo monitorare invece di indovinare.
+    if (variants && variants.length >= 2) {
+      openVariantModal(variants, { url, title });
+      return;
+    }
+
+    const looksLikeHostname = !title || title.replace(/^www\./,"") === new URL(url).hostname.replace(/^www\./,"");
+    document.getElementById("manualTitleInp").value = looksLikeHostname ? "" : title;
+    document.getElementById("targetInp").value = "";
+    document.getElementById("targetConfirm").dataset.url = url;
+
+    if (price === null) {
+      document.getElementById("modalTitle").textContent = "Prezzo non trovato automaticamente";
+      const desc = serverErrMsg || "Non sono riuscito a leggere il prezzo da questa pagina (alcuni siti bloccano le richieste automatiche, es. Amazon, Fnac).";
+      document.getElementById("modalDesc").innerHTML = `${desc}<br><small style="color:var(--text3)">Inserisci tu il prezzo qui sotto.</small>`;
+      document.getElementById("manualPriceRow").style.display = "block";
+      document.getElementById("manualPriceInp").value = "";
+      document.getElementById("targetLabel").textContent = "Prezzo target (opzionale)";
+      document.getElementById("targetConfirm").dataset.manualMode = "1";
+      document.getElementById("targetModal").classList.add("open");
+    } else {
+      showTargetModalForFoundPrice(price, url, title);
+    }
+  } catch(e) {
+    setStatus("Errore: " + e.message, "err");
+    toast("Errore: " + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = "+ Aggiungi";
+  }
+});
+
+// Mostra il modal "prodotto trovato" con il prezzo già noto (sia che sia
+// stato letto automaticamente, sia che l'utente abbia appena scelto una
+// variante tra più prezzi rilevati).
+function showTargetModalForFoundPrice(price, url, title) {
+  document.getElementById("targetInp").value = "";
+  document.getElementById("targetConfirm").dataset.url = url;
+  document.getElementById("modalTitle").textContent = "Prodotto trovato";
+  document.getElementById("modalDesc").innerHTML = `Prezzo rilevato: <strong style="color:var(--green)">${price.toFixed(2)}€</strong><br>A che prezzo vuoi essere avvisato?<br><small style="color:var(--text3)">(lascia vuoto = notifica ad ogni calo)</small>`;
+  document.getElementById("manualPriceRow").style.display = "none";
+  document.getElementById("targetConfirm").dataset.manualMode = "0";
+  document.getElementById("targetConfirm").dataset.autoPrice = price;
+  document.getElementById("targetConfirm").dataset.autoTitle = title || new URL(url).hostname;
+  document.getElementById("targetModal").classList.add("open");
+}
+
+// ── SCELTA VARIANTE (pagine con più prezzi, es. modelli/piattaforme) ────────
+// context.productId presente → si sta risolvendo un prodotto già monitorato.
+// context.productId assente → si sta aggiungendo un prodotto nuovo.
+function openVariantModal(variants, context) {
+  const list = document.getElementById("variantOptionsList");
+  list.innerHTML = "";
+  variants.forEach(v => {
+    const b = document.createElement("button");
+    b.className = "variant-option-btn";
+    b.textContent = v.toFixed(2) + "€";
+    b.addEventListener("click", async () => {
+      document.getElementById("variantModal").classList.remove("open");
+      if (context.productId) {
+        try {
+          const updated = await api("POST", `/products/${context.productId}/resolve-variant`, { price: v });
+          const idx = products.findIndex(x => x.id === context.productId);
+          if (idx !== -1) products[idx] = updated;
+          refreshCurrentProductView();
+          toast("Prezzo impostato: " + v.toFixed(2) + "€ ✓");
+        } catch(e) { toast("Errore: " + e.message); }
+      } else {
+        showTargetModalForFoundPrice(v, context.url, context.title);
+      }
+    });
+    list.appendChild(b);
+  });
+  document.getElementById("variantModal").classList.add("open");
+}
+
+document.getElementById("variantCancel").addEventListener("click", () => {
+  document.getElementById("variantModal").classList.remove("open");
+});
+
+document.getElementById("targetCancel").addEventListener("click", () => {
+  document.getElementById("targetModal").classList.remove("open");
+});
+document.getElementById("targetConfirm").addEventListener("click", async () => {
+  const btn      = document.getElementById("targetConfirm");
+  const manual   = btn.dataset.manualMode === "1";
+  const targetV     = parseFloat(document.getElementById("targetInp").value.replace(",", "."));
+  const customTitle = document.getElementById("manualTitleInp").value.trim();
+  const url         = btn.dataset.url;
+
+  let price, title;
+  if (manual) {
+    price = parseFloat(document.getElementById("manualPriceInp").value.replace(",", "."));
+    if (isNaN(price) || price <= 0) { toast("Inserisci un prezzo valido"); return; }
+    title = customTitle || new URL(url).hostname;
+  } else {
+    price = parseFloat(btn.dataset.autoPrice);
+    title = customTitle || btn.dataset.autoTitle;
+  }
+
+  document.getElementById("targetModal").classList.remove("open");
+  try {
+    const product = await api("POST", "/products", {
+      url, title, currentPrice: price,
+      targetPrice: isNaN(targetV) ? null : targetV,
+    });
+    products.unshift(product);
+    pinNewProductToTopOfHome(product.id);
+    renderHomeList(); updatePlanStrip();
+    document.getElementById("urlInp").value = "";
+    setStatus("Prodotto aggiunto ✓", "ok");
+    setTimeout(() => setStatus(""), 2500);
+    toast("Prodotto aggiunto ✓");
+  } catch(e) {
+    setStatus("Errore: " + e.message, "err");
+    toast("Errore: " + e.message);
+  }
+});
+
+// ── REFRESH ALL ─────────────────────────────────────────────────────────────
+document.getElementById("refreshBtn").addEventListener("click", async () => {
+  setStatus("Controllo server in corso…");
+  try {
+    const r = await api("POST", "/check-now");
+    await loadProducts();
+    setStatus(`Aggiornati ${r.updated} / ${r.checked} prodotti ✓`, "ok");
+    setTimeout(() => setStatus(""), 3000);
+  } catch(e) { setStatus("Errore: " + e.message, "err"); }
+});
+
+// ── HISTORY ──────────────────────────────────────────────────────────────────
+async function openHistory(p) {
+  document.getElementById("histTitle").textContent = p.title || p.url;
+  document.getElementById("histList").innerHTML = `<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">Caricamento…</div>`;
+  document.getElementById("chartBox").style.display = "block";
+  showView("vHistory");
+
+  let rows = [];
+  try {
+    rows = await api("GET", `/products/${p.id}/history?limit=200`);
+  } catch(e) { toast("Errore storico: " + e.message); return; }
+
+  // Grafico
+  if (chartInst) { chartInst.destroy(); chartInst = null; }
+  const chronological = [...rows].reverse(); // rows è già DESC → reverse = ASC
+  if (chronological.length >= 2) {
+    const labels = chronological.map(r => new Date(r.date ?? r.recorded_at).toLocaleDateString("it-IT", { day:"2-digit", month:"short" }));
+    const prices = chronological.map(r => r.price);
+    const mn = Math.min(...prices), mx = Math.max(...prices);
+    const pad = (mx - mn) * 0.2 || 2;
+    chartInst = new Chart(document.getElementById("priceChart"), {
+      type: "line",
+      data: { labels, datasets: [{ data: prices, borderColor:"#3b82f6", backgroundColor:"rgba(59,130,246,.1)", tension:.4, pointRadius:3, pointBackgroundColor:"#3b82f6", fill:true }] },
+      options: {
+        responsive:false, animation:false,
+        plugins:{ legend:{display:false} },
+        scales:{
+          x:{ ticks:{color:"#64748b",font:{size:9}}, grid:{color:"#2e3447"} },
+          y:{ min:Math.max(0,mn-pad), max:mx+pad, ticks:{color:"#64748b",font:{size:9},callback:v=>v.toFixed(0)+"€"}, grid:{color:"#2e3447"} },
+        },
+      },
+    });
+  } else {
+    document.getElementById("chartBox").style.display = "none";
+  }
+
+  // Lista
+  const hl = document.getElementById("histList");
+  hl.innerHTML = "";
+  rows.forEach((r, i) => {
+    const prev = rows[i + 1];
+    let chg = "";
+    if (prev) {
+      const d = r.price - prev.price;
+      if (d !== 0) chg = `<span class="${d<0?"chg-d":"chg-u"}">${d<0?"↓":"↑"}${Math.abs(d).toFixed(2)}€</span>`;
+    }
+    const dl = new Date(r.date ?? r.recorded_at).toLocaleDateString("it-IT", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
+    const row = document.createElement("div");
+    row.className = "hist-row";
+    row.innerHTML = `<span class="hist-date">${dl}</span><span class="hist-price">${r.price.toFixed(2)}€ ${chg}</span>`;
+    hl.appendChild(row);
+  });
+  if (rows.length === 0) hl.innerHTML = `<div class="empty"><div class="empty-title">Nessuna rilevazione ancora</div></div>`;
+}
+
+// ── PLANS ─────────────────────────────────────────────────────────────────────
+function loadPlans() {
+  document.querySelectorAll(".plan-card").forEach(card => {
+    const p = card.dataset.plan;
+    const btn = card.querySelector(".plan-cta");
+    const isCur = p === userPlan;
+    card.classList.toggle("current", isCur);
+    btn.classList.toggle("cur", isCur);
+    btn.disabled = isCur;
+    btn.textContent = isCur ? "Piano attuale" : (p === "free" ? "Usa gratis" : `Passa a ${PLANS[p]?.label ?? p}`);
+  });
+}
+
+document.querySelectorAll(".plan-cta").forEach(btn => {
+  btn.addEventListener("click", async () => {
+    const target = btn.dataset.target;
+    if (!target || btn.disabled) return;
+    if (btn.dataset.paid) {
+      await handleStripe(target);
+    } else {
+      // Free: nessun pagamento, ma il cambio va comunque salvato sul server
+      try {
+        await api("POST", "/admin/override-plan", { targetUserId: userId, plan: target }, ADMIN_KEY);
+        userPlan = target;
+        localStorage.setItem("pw_plan", userPlan);
+        loadPlans(); updatePlanStrip(); toast(`Piano ${PLANS[target].label} attivato ✓`);
+      } catch(e) {
+        toast("Errore dal server: " + e.message + " — il piano non è stato cambiato");
+      }
+    }
+  });
+});
+
+async function handleStripe(plan) {
+  const sk = localStorage.getItem("pw_stripe_key") || "";
+  if (!sk) {
+    if (confirm(`Abbonamento ${PLANS[plan]?.label} — modalità demo.\nVuoi simulare l'acquisto?`)) {
+      try {
+        // In modalità demo (nessun backend di pagamento reale) il cambio
+        // piano viene comunque salvato davvero sul server, altrimenti il
+        // conteggio prodotti resterebbe legato al vecchio piano "free".
+        await api("POST", "/admin/override-plan", { targetUserId: userId, plan }, ADMIN_KEY);
+        userPlan = plan; localStorage.setItem("pw_plan", plan);
+        loadPlans(); updatePlanStrip(); toast(`Piano ${PLANS[plan].label} attivato (demo) ✓`);
+      } catch(e) {
+        toast("Errore dal server: " + e.message + " — il piano non è stato cambiato");
+      }
+    }
+    return;
+  }
+  const portalUrl = localStorage.getItem("pw_stripe_portal") || "";
+  if (portalUrl) window.open(portalUrl, "_blank");
+  else toast("Configura il portale Stripe nel pannello gestore");
+}
+
+// ── SETTINGS ───────────────────────────────────────────────────────────────
+async function loadSettings() {
+  const sk = localStorage.getItem("pw_stripe_key") || "";
+  const sp = localStorage.getItem("pw_stripe_portal") || "";
+  if (document.getElementById("adminStripeKey"))  document.getElementById("adminStripeKey").value  = sk;
+  if (document.getElementById("adminPortalUrl"))  document.getElementById("adminPortalUrl").value  = sp;
+
+  try {
+    const me = await api("GET", "/me");
+    document.getElementById("sNotifyMode").value    = me.notifyMode ?? "any_drop";
+    document.getElementById("sBrowserRun").checked  = !!me.browserRunEnabled;
+    document.getElementById("sCheckInterval").value = me.checkIntervalMinutes ? String(me.checkIntervalMinutes) : "default";
+  } catch(e) {
+    toast("Errore caricamento impostazioni: " + e.message);
+  }
+
+  // Stato reale della sottoscrizione push su questo dispositivo/browser
+  const pushToggle = document.getElementById("sPushEnabled");
+  const pushDesc    = document.getElementById("pushStatusDesc");
+  if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+    pushToggle.disabled = true;
+    pushDesc.textContent = "Il tuo browser non supporta le notifiche push.";
+  } else if (Notification.permission === "denied") {
+    pushToggle.disabled = true;
+    pushToggle.checked = false;
+    pushDesc.textContent = "Notifiche bloccate dal browser — abilitale dalle impostazioni del sito.";
+  } else {
+    if (!swRegistration) swRegistration = await registerServiceWorker();
+    const sub = await getCurrentPushSubscription();
+    pushToggle.checked = !!sub;
+    pushDesc.textContent = "Ricevi un avviso anche ad app chiusa quando un prezzo cambia";
+  }
+}
+
+document.getElementById("sNotifyMode").addEventListener("change", async () => {
+  const val = document.getElementById("sNotifyMode").value;
+  try {
+    await api("PATCH", "/me", { notifyMode: val });
+    toast("Preferenza salvata ✓");
+  } catch(e) { toast("Errore: " + e.message); }
+});
+
+document.getElementById("sBrowserRun").addEventListener("change", async () => {
+  const on = document.getElementById("sBrowserRun").checked;
+  try {
+    await api("PATCH", "/me", { browserRunEnabled: on });
+    toast(on ? "Browser Run attivato ✓" : "Browser Run disattivato ✓");
+  } catch(e) {
+    toast("Errore: " + e.message);
+    document.getElementById("sBrowserRun").checked = !on; // rollback visivo
+  }
+});
+
+document.getElementById("sCheckInterval").addEventListener("change", async () => {
+  const val = document.getElementById("sCheckInterval").value;
+  const minutes = val === "default" ? null : parseInt(val, 10);
+  try {
+    await api("PATCH", "/me", { checkIntervalMinutes: minutes });
+    toast("Frequenza aggiornata ✓");
+  } catch(e) { toast("Errore: " + e.message); }
+});
+
+document.getElementById("sLogout").addEventListener("click", () => {
+  if (!confirm("Eseguire il logout? Il token verrà rimosso dal dispositivo.")) return;
+  localStorage.removeItem("pw_token");
+  localStorage.removeItem("pw_plan");
+  localStorage.removeItem("pw_userId");
+  localStorage.removeItem("pw_adminUnlocked");
+  location.reload();
+});
+
+document.getElementById("sExport").addEventListener("click", async () => {
+  try {
+    const data = await api("GET", "/products");
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" });
+    const a = Object.assign(document.createElement("a"), { href:URL.createObjectURL(blob), download:"price-watch-export.json" });
+    a.click(); toast("Esportato ✓");
+  } catch(e) { toast("Errore export: " + e.message); }
+});
+
+document.getElementById("sPortal").addEventListener("click", () => {
+  const u = localStorage.getItem("pw_stripe_portal") || "";
+  if (u) window.open(u, "_blank"); else toast("Portale Stripe non configurato");
+});
+
+// Chiave gestore
+document.getElementById("sKeyApply").addEventListener("click", async () => {
+  const key = document.getElementById("sAdminKey").value.trim();
+  const stEl = document.getElementById("sKeyStatus");
+  if (key !== ADMIN_KEY) { stEl.textContent = "❌ Chiave non valida"; stEl.className = "key-st err"; return; }
+  // Attiva piano god via API admin
+  try {
+    await api("POST", "/admin/override-plan", { targetUserId: userId, plan: "god" }, ADMIN_KEY);
+    userPlan = "god"; localStorage.setItem("pw_plan", "god");
+    localStorage.setItem("pw_adminUnlocked", "1");
+    stEl.textContent = "✅ Accesso gestore concesso — piano God attivato!";
+    stEl.className = "key-st ok";
+    document.getElementById("adminNavBtn").classList.remove("hidden");
+    updatePlanStrip();
+    setTimeout(() => navTo("vAdmin", document.getElementById("adminNavBtn")), 700);
+  } catch(e) {
+    // Nessun fallback locale: se la chiamata al server fallisce, il piano
+    // NON è stato davvero cambiato sul database — mostriamo l'errore reale
+    // invece di far credere che l'attivazione sia andata a buon fine.
+    stEl.textContent = "❌ Errore dal server: " + e.message + " (il piano non è stato cambiato)";
+    stEl.className = "key-st err";
+  }
+});
+document.getElementById("sAdminKey").addEventListener("keydown", e => { if (e.key==="Enter") document.getElementById("sKeyApply").click(); });
+
+// ── ADMIN ───────────────────────────────────────────────────────────────────
+async function loadAdmin() {
+  try {
+    const stats = await api("GET", "/admin/stats", null, ADMIN_KEY);
+    document.getElementById("adminStats").innerHTML = `
+      <div class="stat-card"><div class="stat-val">${stats.users}</div><div class="stat-lbl">Utenti</div></div>
+      <div class="stat-card"><div class="stat-val">${stats.activeProducts}</div><div class="stat-lbl">Prodotti attivi</div></div>
+      <div class="stat-card"><div class="stat-val">${stats.historyRows}</div><div class="stat-lbl">Rilevazioni</div></div>
+      <div class="stat-card"><div class="stat-val">${stats.errors}</div><div class="stat-lbl">Errori</div></div>
+    `;
+  } catch(e) {
+    document.getElementById("adminStats").innerHTML = `<div style="color:var(--text3);font-size:12px;padding:8px">Statistiche non disponibili (Worker non ancora configurato)</div>`;
+  }
+  document.getElementById("adminPlanSel").value = userPlan;
+  const sk = localStorage.getItem("pw_stripe_key") || "";
+  const sp = localStorage.getItem("pw_stripe_portal") || "";
+  document.getElementById("adminStripeKey").value  = sk;
+  document.getElementById("adminPortalUrl").value  = sp;
+}
+
+document.getElementById("adminApplyPlan").addEventListener("click", async () => {
+  const plan = document.getElementById("adminPlanSel").value;
+  try {
+    await api("POST", "/admin/override-plan", { targetUserId: userId, plan }, ADMIN_KEY);
+    userPlan = plan; localStorage.setItem("pw_plan", plan);
+    updatePlanStrip(); toast(`Piano impostato: ${PLANS[plan]?.label ?? plan}`);
+    loadAdmin();
+  } catch(e) {
+    toast("Errore dal server: " + e.message + " — il piano non è stato cambiato");
+  }
+});
+
+document.getElementById("adminLoadLog").addEventListener("click", async () => {
+  const logEl  = document.getElementById("adminLogEl");
+  const clearR = document.getElementById("adminClearRow");
+  logEl.classList.remove("hidden");
+  clearR.style.display = "flex";
+  logEl.textContent = "Caricamento…";
+  try {
+    const rows = await api("GET", "/admin/log?limit=200", null, ADMIN_KEY);
+    if (rows.length === 0) { logEl.textContent = "Nessuna voce."; return; }
+    logEl.innerHTML = rows.map(r => {
+      const ts = new Date(r.ts).toLocaleString("it-IT", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit", second:"2-digit" });
+      const cls = r.result === "ok" ? "log-ok" : r.result === "changed" ? "log-changed" : "log-error";
+      const badge = r.result === "ok" ? "✓" : r.result === "changed" ? "↕" : "✗";
+      return `<div class="log-entry"><span class="log-time">${ts}</span><span class="${cls}">${badge}</span> <strong>${r.product_title??""}</strong> — ${r.message??""}</div>`;
+    }).join("");
+  } catch(e) { logEl.textContent = "Errore: " + e.message; }
+});
+
+document.getElementById("adminClearLog").addEventListener("click", async () => {
+  if (!confirm("Svuotare il log dal server?")) return;
+  try {
+    await api("DELETE", "/admin/log", null, ADMIN_KEY);
+    document.getElementById("adminLogEl").textContent = "Log svuotato.";
+    toast("Log svuotato ✓");
+  } catch(e) { toast("Errore: " + e.message); }
+});
+
+document.getElementById("adminSaveStripe").addEventListener("click", () => {
+  localStorage.setItem("pw_stripe_key",    document.getElementById("adminStripeKey").value.trim());
+  localStorage.setItem("pw_stripe_portal", document.getElementById("adminPortalUrl").value.trim());
+  toast("Configurazione Stripe salvata ✓");
+});
+
+/* ── LIQUID GLASS — sensor-driven reflection controller ───────────────────── */
+let glassMotionEnabled = false;
+let glassMotionPermissionPending = false;
+let glassMotionRaf = 0;
+let glassTargetX = 50;
+let glassTargetY = 18;
+let glassTargetAngle = 315;
+let glassX = 50;
+let glassY = 18;
+let glassAngle = 315;
+
+function clampGlass(v, min, max) {
+  return Math.max(min, Math.min(max, v));
+}
+
+function updateGlassCSS() {
+  document.documentElement.style.setProperty("--lg-x", `${glassX}%`);
+  document.documentElement.style.setProperty("--lg-y", `${glassY}%`);
+  document.documentElement.style.setProperty("--lg-angle", `${glassAngle}deg`);
+}
+
+function animateGlassMotion() {
+  glassX += (glassTargetX - glassX) * 0.10;
+  glassY += (glassTargetY - glassY) * 0.10;
+  const deltaAngle = ((glassTargetAngle - glassAngle + 540) % 360) - 180;
+  glassAngle += deltaAngle * 0.10;
+  updateGlassCSS();
+  glassMotionRaf = requestAnimationFrame(animateGlassMotion);
+}
+
+function handleGlassOrientation(e) {
+  if (!glassMotionEnabled) return;
+  const gamma = Number.isFinite(e.gamma) ? e.gamma : 0;
+  const beta = Number.isFinite(e.beta) ? e.beta : 45;
+  const alpha = Number.isFinite(e.alpha) ? e.alpha : 0;
+
+  // La posizione della luce segue l'inclinazione del telefono; l'angolo
+  // ruota leggermente con alpha per simulare una sorgente realmente spaziale.
+  glassTargetX = clampGlass(50 + gamma * 0.70, 3, 97);
+  glassTargetY = clampGlass(18 + (beta - 45) * 0.52, 3, 97);
+  glassTargetAngle = 315 + gamma * 0.95 + alpha * 0.18;
+}
+
+function startGlassMotion() {
+  if (glassMotionEnabled) return;
+  glassMotionEnabled = true;
+  window.addEventListener("deviceorientation", handleGlassOrientation, { passive: true });
+  window.addEventListener("deviceorientationabsolute", handleGlassOrientation, { passive: true });
+  if (!glassMotionRaf) animateGlassMotion();
+
+  const status = document.getElementById("motionStatusDesc");
+  const btn = document.getElementById("sMotionEnable");
+  if (status) status.textContent = "Riflessi dinamici attivi: la luce segue il movimento del telefono";
+  if (btn) { btn.textContent = "Attivo ✓"; btn.disabled = true; }
+}
+
+async function requestGlassMotionPermission() {
+  if (glassMotionEnabled || glassMotionPermissionPending) return glassMotionEnabled;
+  glassMotionPermissionPending = true;
+
+  try {
+    // Su iOS la richiesta deve avvenire durante una user activation.
+    if (typeof DeviceMotionEvent !== "undefined" &&
+        typeof DeviceMotionEvent.requestPermission === "function") {
+      const motionPermission = await DeviceMotionEvent.requestPermission();
+      if (motionPermission !== "granted") {
+        toast("Permesso al sensore di movimento non concesso");
+        glassMotionPermissionPending = false;
+        return false;
+      }
+    }
+
+    if (typeof DeviceOrientationEvent !== "undefined" &&
+        typeof DeviceOrientationEvent.requestPermission === "function") {
+      const orientationPermission = await DeviceOrientationEvent.requestPermission();
+      if (orientationPermission !== "granted") {
+        toast("Permesso all'orientamento del dispositivo non concesso");
+        glassMotionPermissionPending = false;
+        return false;
+      }
+    }
+
+    startGlassMotion();
+    glassMotionPermissionPending = false;
+    return true;
+  } catch (err) {
+    console.warn("Liquid Glass motion permission:", err);
+    glassMotionPermissionPending = false;
+    toast("Impossibile accedere al sensore di movimento");
+    return false;
+  }
+}
+
+// Browser che non richiedono permesso: possiamo collegare subito il sensore.
+const glassNeedsPermission =
+  (typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function") ||
+  (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function");
+if (!glassNeedsPermission && "DeviceOrientationEvent" in window) startGlassMotion();
+
+// Primo gesto dell'utente: su iPhone/iPad questo produce il prompt nativo
+// senza aspettare che l'utente scopra un'impostazione nascosta.
+document.addEventListener("click", () => {
+  if (("DeviceOrientationEvent" in window || "DeviceMotionEvent" in window) &&
+      !glassMotionEnabled && !glassMotionPermissionPending) {
+    requestGlassMotionPermission();
+  }
+}, { capture: true, passive: true, once: true });
+
+// ── NOTIFICHE PUSH ────────────────────────────────────────────────────────────
+let swRegistration = null;
+
+async function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return null;
+  try {
+    swRegistration = await navigator.serviceWorker.register("/sw.js");
+    return swRegistration;
+  } catch (e) {
+    console.error("Registrazione service worker fallita:", e);
+    lastServiceWorkerError = e.message; // usato per mostrare un errore preciso all'utente
+    return null;
+  }
+}
+let lastServiceWorkerError = null;
+
+// Converte la chiave pubblica VAPID (base64url) nel formato richiesto da pushManager.subscribe
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  const output = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) output[i] = rawData.charCodeAt(i);
+  return output;
+}
+
+async function getCurrentPushSubscription() {
+  if (!swRegistration) return null;
+  try { return await swRegistration.pushManager.getSubscription(); }
+  catch { return null; }
+}
+
+async function subscribeToPush() {
+  if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+    toast("Il tuo browser non supporta le notifiche push");
+    return false;
+  }
+  if (!swRegistration) swRegistration = await registerServiceWorker();
+  if (!swRegistration) {
+    toast("Errore service worker: " + (lastServiceWorkerError || "impossibile registrarlo. Verifica che sw.js sia presente sul sito."));
+    return false;
+  }
+
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    toast("Permesso notifiche negato dal browser");
+    return false;
+  }
+
+  try {
+    const { publicKey } = await api("GET", "/push/vapid-public-key");
+    const cleanKey = String(publicKey || "").replace(/[^A-Za-z0-9\-_]/g, ""); // rimuove qualsiasi carattere non valido, non solo agli estremi
+    const sub = await swRegistration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(cleanKey),
+    });
+    await api("POST", "/push/subscribe", { subscription: sub.toJSON() });
+    toast("Notifiche attivate su questo dispositivo ✓");
+    return true;
+  } catch (e) {
+    toast("Errore attivazione notifiche: " + e.message);
+    return false;
+  }
+}
+
+async function unsubscribeFromPush() {
+  const sub = await getCurrentPushSubscription();
+  if (!sub) return true;
+  try {
+    await api("DELETE", "/push/subscribe", { endpoint: sub.endpoint });
+    await sub.unsubscribe();
+    toast("Notifiche disattivate su questo dispositivo");
+    return true;
+  } catch (e) {
+    toast("Errore disattivazione: " + e.message);
+    return false;
+  }
+}
+
+document.getElementById("sPushEnabled").addEventListener("change", async (e) => {
+  const wantOn = e.target.checked;
+  e.target.disabled = true;
+  const ok = wantOn ? await subscribeToPush() : await unsubscribeFromPush();
+  if (!ok) e.target.checked = !wantOn; // rollback se qualcosa è andato storto
+  e.target.disabled = false;
+});
+
+document.getElementById("sPushTest").addEventListener("click", async () => {
+  try {
+    await api("POST", "/push/test");
+    toast("Notifica di prova inviata — controlla tra qualche secondo");
+  } catch (e) { toast("Errore: " + e.message); }
+});
+
+if (document.getElementById("sMotionEnable")) {
+  document.getElementById("sMotionEnable").addEventListener("click", async () => {
+    await requestGlassMotionPermission();
+  });
+}
+
+// ── INIT (con splash screen) ─────────────────────────────────────────────────
+async function initApp() {
+  const splash  = document.getElementById("splash");
+  const minTime = 900; // il logo resta visibile almeno questo tempo, anche a rete veloce
+  const t0 = Date.now();
+  let goToApp = false;
+
+  if (token) {
+    try {
+      const me = await api("GET", "/me");
+      userPlan = me.plan ?? userPlan;
+      localStorage.setItem("pw_plan", userPlan);
+      if (me.userId) {
+        userId = me.userId;
+        localStorage.setItem("pw_userId", userId);
+      }
+      products = await api("GET", "/products");
+      products = applySavedOrder(products);
+      folders = await api("GET", "/folders");
+      goToApp = true;
+    } catch (e) {
+      // token scaduto/non valido → torna alla schermata di accesso
+      token = null;
+      localStorage.removeItem("pw_token");
+    }
+  }
+
+  const elapsed = Date.now() - t0;
+  if (elapsed < minTime) await new Promise(r => setTimeout(r, minTime - elapsed));
+
+  if (goToApp) {
+    document.getElementById("appWrap").classList.remove("hidden");
+    renderHomeList(true); // animazione d'ingresso dal basso, prodotti a cascata
+    updatePlanStrip();
+    if (localStorage.getItem("pw_adminUnlocked") === "1") {
+      document.getElementById("adminNavBtn").classList.remove("hidden");
+    }
+  } else {
+    document.getElementById("authWrap").classList.remove("hidden");
+  }
+
+  splash.classList.add("fade-out");
+  setTimeout(() => splash.remove(), 1050);
+
+  registerServiceWorker();
+}
+
+initApp();
+</script>
+</body>
+</html>

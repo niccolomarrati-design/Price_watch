@@ -1,0 +1,47 @@
+name = "price-watch-backend"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+# Necessario per la libreria delle notifiche push (@block65/webcrypto-web-push),
+# che internamente usa il modulo Node "buffer" — senza questo flag il deploy
+# fallisce con "No such module node:buffer".
+compatibility_flags = ["nodejs_compat"]
+
+# Il Cron Trigger fa girare la funzione checkDueProducts ogni 15 minuti.
+# All'interno decidiamo PRODOTTO PER PRODOTTO se è già "scaduto" in base al
+# piano del suo proprietario (free = ogni 3 ore, pro = ogni ora,
+# max/god = ogni 15-20 minuti, o l'intervallo personalizzato scelto
+# dall'utente nelle Impostazioni) — non tutti vengono controllati ogni volta.
+[triggers]
+crons = ["*/15 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "price-watch-db"
+database_id = "d587f116-61b3-40c1-a43f-41be7e528bb8"
+
+# Browser Run (browser headless) — usato SOLO come fallback quando il fetch
+# semplice non trova il prezzo (es. Amazon, Fnac che bloccano le richieste
+# automatiche), e SOLO se l'utente lo ha attivato nelle Impostazioni.
+# Gratis fino a 5 ore/mese sul piano Free di Cloudflare; oltre quel limite
+# le richieste falliscono silenziosamente e l'app apre automaticamente il
+# campo di inserimento prezzo manuale.
+[browser]
+binding = "MYBROWSER"
+
+# Notifiche push (VAPID_PUBLIC_KEY e VAPID_PRIVATE_KEY) vanno impostate
+# come SECRET, non qui in chiaro. Esegui questi due comandi dal terminale:
+#
+#   npx wrangler secret put VAPID_PUBLIC_KEY
+#   npx wrangler secret put VAPID_PRIVATE_KEY
+#
+# Le chiavi da usare sono generate insieme a questo progetto — vedi il
+# messaggio con cui ti sono state fornite, o rigenerane di nuove con:
+#   npx web-push generate-vapid-keys
+
+# Pannello gestore (statistiche server, override piano, log controlli) —
+# protetto da una chiave segreta che deve combaciare con quella scritta
+# nella web app (ADMIN_KEY costante in index.html). Impostala con:
+#
+#   npx wrangler secret put ADMIN_KEY
+#
+# Inserisci esattamente: Niccolò_Quantistica

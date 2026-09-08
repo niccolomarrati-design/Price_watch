@@ -1,0 +1,18 @@
+{
+  "name": "price-watch-backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 execute price-watch-db --local --file=./schema.sql",
+    "db:migrate:remote": "wrangler d1 execute price-watch-db --remote --file=./schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  },
+  "dependencies": {
+    "@cloudflare/puppeteer": "^1.0.2",
+    "@block65/webcrypto-web-push": "^1.0.2"
+  }
+}

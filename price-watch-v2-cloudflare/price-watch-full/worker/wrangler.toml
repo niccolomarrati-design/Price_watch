@@ -1,0 +1,23 @@
+name       = "price-watch-api"
+main       = "index.js"
+compatibility_date = "2024-09-01"
+
+# ── D1 Database ───────────────────────────────────────────────────────────────
+# Crea il database con:  wrangler d1 create price-watch-db
+# poi incolla qui l'ID che ti viene restituito.
+[[d1_databases]]
+binding      = "DB"
+database_name = "price-watch-db"
+database_id  = "SOSTITUISCI-CON-IL-TUO-DATABASE-ID"
+
+# ── Cron Trigger: controlla prezzi ogni ora ────────────────────────────────────
+[triggers]
+crons = ["0 * * * *"]
+
+# ── Variabili d'ambiente (NON mettere segreti qui in chiaro) ─────────────────
+# Usa invece:  wrangler secret put TOKEN_SECRET
+#              wrangler secret put ADMIN_KEY
+# Le variabili di seguito sono solo placeholder per documentare i nomi.
+[vars]
+# TOKEN_SECRET  → stringa segreta ≥32 char per firmare i token JWT
+# ADMIN_KEY     → "Niccolò_Quantistica" (o quello che preferisci)

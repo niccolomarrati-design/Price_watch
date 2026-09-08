@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Price Watch</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+
+  <!-- VISTA PRINCIPALE -->
+  <div id="mainView">
+    <header>
+      <h1>💰 Price Watch</h1>
+      <div class="header-actions">
+        <button id="checkNowBtn" title="Controlla tutti i prezzi ora">↻</button>
+        <button id="settingsBtn" title="Impostazioni">⚙️</button>
+      </div>
+    </header>
+
+    <div id="planBar">
+      <span id="planLabel"></span>
+      <button id="manageplanBtn">Gestisci piano</button>
+    </div>
+
+    <button id="addBtn" class="primary">+ Aggiungi pagina corrente</button>
+
+    <div id="status"></div>
+
+    <ul id="productList"></ul>
+
+    <p id="emptyState" class="empty">Nessun prodotto monitorato. Apri una pagina prodotto e clicca "Aggiungi pagina corrente".</p>
+  </div>
+
+  <!-- VISTA UPGRADE -->
+  <div id="upgradeView" class="hidden">
+    <header>
+      <button id="backBtn" class="back-btn">← Indietro</button>
+      <h1>Piani</h1>
+    </header>
+    <p id="upgradeReason" class="upgrade-reason"></p>
+
+    <div class="plan-card" data-plan="free">
+      <div class="plan-header">
+        <span class="plan-icon">🌱</span>
+        <div>
+          <h2>Free</h2>
+          <p class="plan-tag">Per iniziare</p>
+        </div>
+      </div>
+      <div class="plan-price">0 €</div>
+      <button class="plan-btn" data-target="free">Usa Price Watch gratis</button>
+      <ul class="plan-features">
+        <li>30 prodotti monitorati</li>
+        <li>Storico prezzi per 7 giorni</li>
+        <li>Controllo automatico ogni ora</li>
+        <li>Notifiche di calo prezzo</li>
+      </ul>
+    </div>
+
+    <div class="plan-card" data-plan="pro">
+      <div class="plan-header">
+        <span class="plan-icon">🚀</span>
+        <div>
+          <h2>Pro</h2>
+          <p class="plan-tag">Per chi monitora tanto</p>
+        </div>
+      </div>
+      <div class="plan-price">5 € <span class="price-period">/ mese</span></div>
+      <button class="plan-btn" data-target="pro">Passa a Pro</button>
+      <ul class="plan-features">
+        <li class="features-intro">Tutto quello che c'è in Free e:</li>
+        <li>70 prodotti monitorati, anche da siti diversi tra loro</li>
+        <li>Storico prezzi per 3 mesi</li>
+        <li>Controllo prioritario più frequente</li>
+      </ul>
+    </div>
+
+    <div class="plan-card" data-plan="max">
+      <div class="plan-header">
+        <span class="plan-icon">👑</span>
+        <div>
+          <h2>Max</h2>
+          <p class="plan-tag">Nessun limite</p>
+        </div>
+      </div>
+      <div class="plan-price">10 € <span class="price-period">/ mese</span></div>
+      <button class="plan-btn" data-target="max">Passa a Max</button>
+      <ul class="plan-features">
+        <li class="features-intro">Tutto ciò che è incluso in Pro, più:</li>
+        <li>Prodotti monitorati <strong>illimitati ∞</strong></li>
+        <li>Storico prezzi per 3 anni (finché non lo cancelli tu)</li>
+        <li>Supporto prioritario</li>
+      </ul>
+    </div>
+
+    <p class="upgrade-disclaimer">⚠️ Modalità demo: cliccando "Passa a Pro/Max" si apre una schermata di pagamento dimostrativa. Nessun dato di carta viene salvato o inviato. Per pagamenti reali serve un backend con Stripe.</p>
+  </div>
+
+  <!-- VISTA CHECKOUT (DEMO) -->
+  <div id="checkoutView" class="hidden">
+    <header>
+      <button id="checkoutBackBtn" class="back-btn">← Indietro</button>
+      <h1>Pagamento</h1>
+    </header>
+
+    <div class="demo-banner">🔒 Modalità demo — nessun dato della carta viene salvato, inviato o elaborato realmente.</div>
+
+    <div id="checkoutSummary" class="checkout-summary"></div>
+
+    <form id="checkoutForm">
+      <label class="field-label">Titolare della carta</label>
+      <input id="cardName" type="text" placeholder="Nome Cognome" required />
+
+      <label class="field-label">Numero carta</label>
+      <input id="cardNumber" type="text" inputmode="numeric" placeholder="1234 5678 9012 3456" maxlength="19" required />
+
+      <div class="field-row">
+        <div>
+          <label class="field-label">Scadenza</label>
+          <input id="cardExpiry" type="text" placeholder="MM/AA" maxlength="5" required />
+        </div>
+        <div>
+          <label class="field-label">CVV</label>
+          <input id="cardCvv" type="text" inputmode="numeric" placeholder="123" maxlength="4" required />
+        </div>
+      </div>
+
+      <div id="checkoutError" class="checkout-error"></div>
+
+      <button type="submit" class="primary" id="confirmPaymentBtn">Conferma pagamento (demo)</button>
+    </form>
+  </div>
+
+  <!-- VISTA IMPOSTAZIONI -->
+  <div id="settingsView" class="hidden">
+    <header>
+      <button id="settingsBackBtn" class="back-btn">← Indietro</button>
+      <h1>Impostazioni</h1>
+    </header>
+
+    <div class="settings-section">
+      <label class="field-label">Frequenza controllo automatico</label>
+      <select id="intervalSelect">
+        <option value="30">Ogni 30 minuti</option>
+        <option value="60">Ogni ora</option>
+        <option value="180">Ogni 3 ore</option>
+        <option value="360">Ogni 6 ore</option>
+      </select>
+    </div>
+
+    <div class="settings-section toggle-row">
+      <label class="field-label" for="notifToggle">Notifiche calo prezzo</label>
+      <input id="notifToggle" type="checkbox" />
+    </div>
+
+    <div class="settings-section">
+      <label class="field-label">Quando notificare</label>
+      <select id="notifModeSelect">
+        <option value="target">Solo quando scende sotto il mio target (se impostato)</option>
+        <option value="any_drop">Ogni calo di prezzo, anche senza target</option>
+        <option value="any_change">Ogni variazione di prezzo, anche in aumento</option>
+      </select>
+    </div>
+
+    <div class="settings-section toggle-row">
+      <label class="field-label" for="quietHoursToggle">Silenzia notifiche in certe ore</label>
+      <input id="quietHoursToggle" type="checkbox" />
+    </div>
+    <div id="quietHoursRange" class="settings-btn-row hidden" style="margin: -8px 0 10px;">
+      <input id="quietStart" type="time" value="22:00" />
+      <span style="font-size:12px;color:#888;">alle</span>
+      <input id="quietEnd" type="time" value="08:00" />
+    </div>
+
+    <div class="settings-section">
+      <label class="field-label">Backup dati</label>
+      <div class="settings-btn-row">
+        <button id="exportBtn" class="secondary">⬇️ Esporta</button>
+        <button id="importBtn" class="secondary">⬆️ Importa</button>
+        <input id="importFile" type="file" accept="application/json" class="hidden" />
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <button id="resetBtn" class="danger">🗑️ Cancella tutti i dati</button>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="settings-section">
+      <label class="field-label">Chiave gestore</label>
+      <div class="settings-btn-row">
+        <input id="adminKeyInput" type="password" placeholder="Inserisci chiave" />
+        <button id="unlockAdminBtn" class="secondary">Sblocca</button>
+      </div>
+      <p id="adminKeyStatus" class="hint"></p>
+    </div>
+
+    <!-- PANNELLO GESTORE (visibile solo dopo chiave corretta) -->
+    <div id="adminPanel" class="hidden">
+      <h2 class="admin-title">🛠️ Pannello gestore</h2>
+
+      <div class="settings-section">
+        <label class="field-label">Anteprima piano (locale, per test UI)</label>
+        <select id="adminPlanSelect">
+          <option value="free">Free</option>
+          <option value="pro">Pro</option>
+          <option value="max">Max</option>
+          <option value="god">God 👑 (illimitato, solo gestore)</option>
+        </select>
+      </div>
+
+      <div class="settings-section">
+        <button id="adminStatsBtn" class="secondary">📊 Mostra statistiche & dati grezzi</button>
+        <pre id="adminStatsOutput" class="admin-stats hidden"></pre>
+      </div>
+
+      <div class="settings-section">
+        <button id="adminLogBtn" class="secondary">📜 Mostra log di esecuzione</button>
+        <button id="adminClearLogBtn" class="secondary hidden">🧹 Svuota log</button>
+        <div id="adminLogOutput" class="admin-log hidden"></div>
+      </div>
+
+      <div class="settings-section">
+        <button id="adminCheckNowBtn" class="secondary">↻ Forza controllo prezzi ora</button>
+      </div>
+
+      <div class="settings-section">
+        <button id="adminLockBtn" class="danger">🔒 Blocca pannello gestore</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA STORICO PREZZI -->
+  <div id="historyView" class="hidden">
+    <header>
+      <button id="historyBackBtn" class="back-btn">← Indietro</button>
+      <h1 id="historyTitle">Storico</h1>
+    </header>
+    <div id="historyChart"></div>
+    <ul id="historyList"></ul>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
+
