@@ -17,22 +17,31 @@ jobs:
       with:
         node-version: 18
 
+    - name: Trova e sposta nella cartella di progetto
+      run: |
+        if [ -f "package.json" ]; then
+          echo "PROJECT_DIR=." >> $GITHUB_ENV
+        else
+          DIR=$(find . -maxdepth 2 -name "package.json" -exec dirname {} \;)
+          echo "PROJECT_DIR=$DIR" >> $GITHUB_ENV
+        fi
+
     - name: Installa dipendenze
-      run: npm install
+      run: cd ${{ env.PROJECT_DIR }} && npm install
 
     - name: Build Web App
-      run: npm run build
+      run: cd ${{ env.PROJECT_DIR }} && npm run build
 
     - name: Sincronizza Capacitor iOS
-      run: npx cap sync ios
+      run: cd ${{ env.PROJECT_DIR }} && npx cap sync ios
 
     - name: Compila Progetto Xcode
       run: |
-        cd ios/App
+        cd ${{ env.PROJECT_DIR }}/ios/App
         xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -derivedDataPath build -sdk iphoneos CODE_SIGNING_ALLOWED=NO
 
     - name: Salva Pacchetto
       uses: actions/upload-artifact@v4
       with:
         name: ios-build-files
-        path: ios/App/build/Build/Products/Release-iphoneos/
+        path: ${{ env.PROJECT_DIR }}/ios/App/build/Build/Products/Release-iphoneos/
