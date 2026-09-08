@@ -1,0 +1,38 @@
+name: Build iOS App
+
+on:
+  push:
+    branches: [ master, main ]
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout codice
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+
+    - name: Installa dipendenze
+      run: npm install
+
+    - name: Build Web App
+      run: npm run build
+
+    - name: Sincronizza Capacitor iOS
+      run: npx cap sync ios
+
+    - name: Compila Progetto Xcode
+      run: |
+        cd ios/App
+        xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -derivedDataPath build -sdk iphoneos CODE_SIGNING_ALLOWED=NO
+
+    - name: Salva Pacchetto
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-build-files
+        path: ios/App/build/Build/Products/Release-iphoneos/
