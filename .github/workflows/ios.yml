@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - master
+
   workflow_dispatch:
 
 jobs:
@@ -12,28 +13,51 @@ jobs:
     runs-on: macos-latest
 
     steps:
+      # ─────────────────────────────────────────────
+      # 1. Scarica il repository
+      # ─────────────────────────────────────────────
       - name: Checkout codice
         uses: actions/checkout@v4
 
+      # ─────────────────────────────────────────────
+      # 2. Configura Node.js
+      # ─────────────────────────────────────────────
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
-      - name: Installa dipendenze
-        run: npm ci
+      # ─────────────────────────────────────────────
+      # 3. Installa dipendenze del progetto
+      # ─────────────────────────────────────────────
+      - name: Installa dipendenze NPM
+        run: npm install
 
-      - name: Installa piattaforma iOS
-        run: npx cap add ios
+      # ─────────────────────────────────────────────
+      # 4. Installa la piattaforma iOS di Capacitor
+      # ─────────────────────────────────────────────
+      - name: Installa Capacitor iOS
+        run: |
+          npm install @capacitor/ios
+          npx cap add ios
 
+      # ─────────────────────────────────────────────
+      # 5. Sincronizza progetto web + plugin
+      # ─────────────────────────────────────────────
       - name: Sincronizza Capacitor
         run: npx cap sync ios
 
-      - name: Installa CocoaPods
+      # ─────────────────────────────────────────────
+      # 6. Installa CocoaPods
+      # ─────────────────────────────────────────────
+      - name: Installa dipendenze CocoaPods
         working-directory: ios/App
-        run: pod install
+        run: pod install --repo-update
 
+      # ─────────────────────────────────────────────
+      # 7. Compila il progetto Xcode
+      # ─────────────────────────────────────────────
       - name: Compila progetto iOS
         working-directory: ios/App
         run: |
@@ -46,7 +70,10 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
 
-      - name: Salva build iOS
+      # ─────────────────────────────────────────────
+      # 8. Salva il risultato della compilazione
+      # ─────────────────────────────────────────────
+      - name: Carica build iOS
         uses: actions/upload-artifact@v4
         with:
           name: ios-build
