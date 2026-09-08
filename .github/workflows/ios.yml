@@ -2,68 +2,52 @@ name: Build iOS App
 
 on:
   push:
-    branches: [ master, main ]
+    branches:
+      - main
+      - master
+  workflow_dispatch:
 
 jobs:
   build-ios:
     runs-on: macos-latest
 
     steps:
-    - name: Checkout codice
-      uses: actions/checkout@v4
+      - name: Checkout codice
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
 
-    - name: Installa dipendenze NPM
-      working-directory: ./price-watch-backend/price-watch-backend
-      run: |
-        npm install
-        npm install @capacitor/core @capacitor/ios @capacitor/cli
+      - name: Installa dipendenze
+        run: npm ci
 
-    - name: Prepara entrypoint HTML e configurazione Capacitor
-      working-directory: ./price-watch-backend/price-watch-backend
-      run: |
-        mkdir -p src
-        if [ ! -f "src/index.html" ]; then
-          echo '<!DOCTYPE html><html><head><title>Price Watch</title></head><body><h1>Price Watch App</h1></body></html>' > src/index.html
-        fi
-        npx cap init "Price Watch" "com.pricewatch.app" --web-dir "src" || true
+      - name: Installa piattaforma iOS
+        run: npx cap add ios
 
-    - name: Inizializza piattaforma iOS e correggi Podfile
-      working-directory: ./price-watch-backend/price-watch-backend
-      run: |
-        # Eseguiamo add ios (anche se fallisce al pod install interno, i file Xcode vengono generati)
-        npx cap add ios || true
+      - name: Sincronizza Capacitor
+        run: npx cap sync ios
 
-        # Forziamo il deployment target a 14.0 sostituendo la riga del target nel Podfile generato
-        ruby -e '
-          file = "ios/App/Podfile"
-          if File.exist?(file)
-            content = File.read(file)
-            content.gsub!(/#?\s*platform :ios, .*/, "platform :ios, '\''14.0'\''")
-            File.write(file, content)
-          end
-        '
+      - name: Installa CocoaPods
+        working-directory: ios/App
+        run: pod install
 
-    - name: Installazione Dipendenze Native (CocoaPods)
-      working-directory: ./price-watch-backend/price-watch-backend/ios/App
-      run: |
-        pod install --repo-update
+      - name: Compila progetto iOS
+        working-directory: ios/App
+        run: |
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
 
-    - name: Copia Asset e Sincronizza Plugins
-      working-directory: ./price-watch-backend/price-watch-backend
-      run: |
-        npx cap copy ios
-
-    - name: Compila Progetto Xcode
-      working-directory: ./price-watch-backend/price-watch-backend/ios/App
-      run: xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -derivedDataPath build -sdk iphoneos CODE_SIGNING_ALLOWED=NO
-
-    - name: Salva Pacchetto
-      uses: actions/upload-artifact@v4
-      with:
-        name: ios-build-files
-        path: price-watch-backend/price-watch-backend/ios/App/build/Build/Products/Release-iphoneos/
+      - name: Salva build iOS
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build
+          path: ios/App/build/Build/Products/Release-iphoneos/
