@@ -23,7 +23,7 @@ jobs:
         npm install
         npm install @capacitor/core @capacitor/ios @capacitor/cli
 
-    - name: Prepara file index.html, adatta Podfile e sincronizza
+    - name: Prepara file index.html e configura Podfile
       working-directory: ./price-watch-backend/price-watch-backend
       run: |
         mkdir -p src
@@ -32,8 +32,13 @@ jobs:
         fi
         npx cap init "Price Watch" "com.pricewatch.app" --web-dir "src" || true
         npx cap add ios || true
-        sed -i '' "s/platform :ios, '12.0'/platform :ios, '13.0'/g" ios/App/Podfile || true
-        sed -i '' "s/platform :ios, '11.0'/platform :ios, '13.0'/g" ios/App/Podfile || true
+        
+        # Aggiorna o decommenta la riga platform :ios nel Podfile a 14.0
+        sed -i '' "s/# platform :ios, '13.0'/platform :ios, '14.0'/g" ios/App/Podfile || true
+        sed -i '' "s/# platform :ios, '12.0'/platform :ios, '14.0'/g" ios/App/Podfile || true
+        sed -i '' "s/platform :ios, '13.0'/platform :ios, '14.0'/g" ios/App/Podfile || true
+        sed -i '' "s/platform :ios, '12.0'/platform :ios, '14.0'/g" ios/App/Podfile || true
+
         npx cap sync ios
 
     - name: Compila Progetto Xcode
