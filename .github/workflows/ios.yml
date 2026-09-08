@@ -23,7 +23,7 @@ jobs:
         npm install
         npm install @capacitor/core @capacitor/ios @capacitor/cli
 
-    - name: Configura ambiente e aggiorna Podfile
+    - name: Prepara ambiente e sincronizza Capacitor (senza pod install)
       working-directory: ./price-watch-backend/price-watch-backend
       run: |
         mkdir -p src
@@ -33,17 +33,18 @@ jobs:
         
         npx cap init "Price Watch" "com.pricewatch.app" --web-dir "src" || true
         npx cap add ios || true
+        
+        # Sincronizza solo gli asset web evitando che Capacitor lanci pod install
+        npx cap sync ios --no-pod-install
 
-        # Forza il deployment target a 14.0 mantenendo la struttura del Podfile originale
-        ruby -e '
-          file = "ios/App/Podfile"
-          text = File.read(file)
-          new_text = text.gsub(/platform :ios, .*/, "platform :ios, '\''14.0'\''")
-          new_text = text.gsub(/# platform :ios, .*/, "platform :ios, '\''14.0'\''") if text == new_text
-          File.open(file, "w") { |f| f.puts new_text }
-        '
-
-        npx cap sync ios
+    - name: Forzatura target iOS 14.0 ed esecuzione manuale Pod Install
+      working-directory: ./price-watch-backend/price-watch-backend/ios/App
+      run: |
+        # Inserisce 'platform :ios, 14.0' in cima al Podfile originale
+        echo "platform :ios, '14.0'" | cat - Podfile > temp && mv temp Podfile
+        
+        # Lancia pod install manualmente con il Podfile aggiornato
+        pod install
 
     - name: Compila Progetto Xcode
       working-directory: ./price-watch-backend/price-watch-backend/ios/App
