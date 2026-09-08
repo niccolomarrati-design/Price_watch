@@ -23,7 +23,7 @@ jobs:
 
     - name: Sincronizza Capacitor iOS
       working-directory: ./price-watch-backend/price-watch-backend
-      run: npx cap sync ios
+      run: npx @capacitor/cli sync ios
 
     - name: Compila Progetto Xcode
       working-directory: ./price-watch-backend/price-watch-backend/ios/App
