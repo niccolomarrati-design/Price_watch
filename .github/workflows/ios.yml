@@ -17,15 +17,18 @@ jobs:
       with:
         node-version: 20
 
-    - name: Installa dipendenze
-      working-directory: ./price-watch-backend/price-watch-backend
-      run: npm install
-
-    - name: Aggiungi e Sincronizza Capacitor iOS
+    - name: Installa dipendenzes
       working-directory: ./price-watch-backend/price-watch-backend
       run: |
-        npx @capacitor/cli add ios || true
-        npx @capacitor/cli sync ios
+        npm install
+        npm install @capacitor/core @capacitor/ios @capacitor/cli
+
+    - name: Inizializza e Sincronizza Capacitor iOS
+      working-directory: ./price-watch-backend/price-watch-backend
+      run: |
+        npx cap init "Price Watch" "com.pricewatch.app" --web-dir "src" || true
+        npx cap add ios || true
+        npx cap sync ios
 
     - name: Compila Progetto Xcode
       working-directory: ./price-watch-backend/price-watch-backend/ios/App
