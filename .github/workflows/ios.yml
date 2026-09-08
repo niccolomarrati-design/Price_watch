@@ -15,15 +15,17 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 18
+        node-version: 20
 
     - name: Installa dipendenze
       working-directory: ./price-watch-backend/price-watch-backend
       run: npm install
 
-    - name: Sincronizza Capacitor iOS
+    - name: Aggiungi e Sincronizza Capacitor iOS
       working-directory: ./price-watch-backend/price-watch-backend
-      run: npx @capacitor/cli sync ios
+      run: |
+        npx @capacitor/cli add ios || true
+        npx @capacitor/cli sync ios
 
     - name: Compila Progetto Xcode
       working-directory: ./price-watch-backend/price-watch-backend/ios/App
