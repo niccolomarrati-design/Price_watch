@@ -21,10 +21,6 @@ jobs:
       working-directory: ./price-watch-backend/price-watch-backend
       run: npm install
 
-    - name: Build Web App
-      working-directory: ./price-watch-backend/price-watch-backend
-      run: npm run build
-
     - name: Sincronizza Capacitor iOS
       working-directory: ./price-watch-backend/price-watch-backend
       run: npx cap sync ios
@@ -34,6 +30,7 @@ jobs:
       run: xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -derivedDataPath build -sdk iphoneos CODE_SIGNING_ALLOWED=NO
 
     - name: Salva Pacchetto
+      working-directory: ./price-watch-backend/price-watch-backend
       uses: actions/upload-artifact@v4
       with:
         name: ios-build-files
