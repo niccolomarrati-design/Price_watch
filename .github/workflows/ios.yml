@@ -13,53 +13,44 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      # ─────────────────────────────────────────────
+
       # 1. Scarica il repository
-      # ─────────────────────────────────────────────
       - name: Checkout codice
         uses: actions/checkout@v4
 
-      # ─────────────────────────────────────────────
       # 2. Configura Node.js
-      # ─────────────────────────────────────────────
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
+          cache: npm
+          cache-dependency-path: price-watch-capacitor/mnt/data/price-watch-capacitor/package-lock.json
 
-
-      # ─────────────────────────────────────────────
-      # 3. Installa dipendenze del progetto
-      # ─────────────────────────────────────────────
-      - name: Installa dipendenze NPM
-        run: npm install
-
-      # ─────────────────────────────────────────────
-      # 4. Installa la piattaforma iOS di Capacitor
-      # ─────────────────────────────────────────────
-      - name: Installa Capacitor iOS
+      # 3. Copia il frontend aggiornato nella www di Capacitor
+      - name: Aggiorna frontend web
         run: |
-          npm install @capacitor/ios
-          npx cap add ios
+          rm -rf price-watch-capacitor/mnt/data/price-watch-capacitor/www/*
+          cp -R price-watch-v2-cloudflare/price-watch-full/webapp/. \
+            price-watch-capacitor/mnt/data/price-watch-capacitor/www/
 
-      # ─────────────────────────────────────────────
-      # 5. Sincronizza progetto web + plugin
-      # ─────────────────────────────────────────────
-      - name: Sincronizza Capacitor
+      # 4. Entra nella vera root del progetto Capacitor
+      - name: Installa dipendenze Capacitor
+        working-directory: price-watch-capacitor/mnt/data/price-watch-capacitor
+        run: npm ci
+
+      # 5. Sincronizza Capacitor con iOS
+      - name: Sincronizza Capacitor iOS
+        working-directory: price-watch-capacitor/mnt/data/price-watch-capacitor
         run: npx cap sync ios
 
-      # ─────────────────────────────────────────────
       # 6. Installa CocoaPods
-      # ─────────────────────────────────────────────
       - name: Installa dipendenze CocoaPods
-        working-directory: ios/App
+        working-directory: price-watch-capacitor/mnt/data/price-watch-capacitor/ios/App
         run: pod install --repo-update
 
-      # ─────────────────────────────────────────────
       # 7. Compila il progetto Xcode
-      # ─────────────────────────────────────────────
       - name: Compila progetto iOS
-        working-directory: ios/App
+        working-directory: price-watch-capacitor/mnt/data/price-watch-capacitor/ios/App
         run: |
           xcodebuild \
             -workspace App.xcworkspace \
@@ -70,11 +61,9 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
 
-      # ─────────────────────────────────────────────
       # 8. Salva il risultato della compilazione
-      # ─────────────────────────────────────────────
       - name: Carica build iOS
         uses: actions/upload-artifact@v4
         with:
           name: ios-build
-          path: ios/App/build/Build/Products/Release-iphoneos/
+          path: price-watch-capacitor/mnt/data/price-watch-capacitor/ios/App/build/Build/Products/Release-iphoneos/
