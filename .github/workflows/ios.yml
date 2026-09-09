@@ -43,17 +43,12 @@ jobs:
         working-directory: price-watch-capacitor/mnt/data/price-watch-capacitor
         run: npx cap sync ios
 
-      # 6. Installa CocoaPods
-      - name: Installa dipendenze CocoaPods
-        working-directory: price-watch-capacitor/mnt/data/price-watch-capacitor/ios
-        run: pod install --repo-update
-
       # 7. Compila il progetto Xcode
       - name: Compila progetto iOS
         working-directory: price-watch-capacitor/mnt/data/price-watch-capacitor/ios/App
         run: |
           xcodebuild \
-            -workspace App.xcworkspace \
+            -project App.xcodeproj \
             -scheme App \
             -configuration Release \
             -sdk iphoneos \
