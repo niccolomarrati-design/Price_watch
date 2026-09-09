@@ -45,7 +45,7 @@ jobs:
 
       # 6. Installa CocoaPods
       - name: Installa dipendenze CocoaPods
-        working-directory: price-watch-capacitor/mnt/data/price-watch-capacitor/ios/App
+        working-directory: price-watch-capacitor/mnt/data/price-watch-capacitor/ios
         run: pod install --repo-update
 
       # 7. Compila il progetto Xcode
