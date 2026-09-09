@@ -56,9 +56,18 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
 
-      # 8. Salva il risultato della compilazione
-      - name: Carica build iOS
+      # 8. Crea il file IPA
+      - name: Crea IPA
+        working-directory: price-watch-capacitor/mnt/data/price-watch-capacitor/ios/App
+        run: |
+          mkdir -p ipa/Payload
+          cp -R build/Build/Products/Release-iphoneos/App.app ipa/Payload/
+          cd ipa
+          zip -r PriceWatch.ipa Payload
+
+      # 9. Carica il file IPA
+      - name: Carica IPA
         uses: actions/upload-artifact@v4
         with:
-          name: ios-build
-          path: price-watch-capacitor/mnt/data/price-watch-capacitor/ios/App/build/Build/Products/Release-iphoneos/
+          name: ios-ipa
+          path: price-watch-capacitor/mnt/data/price-watch-capacitor/ios/App/ipa/PriceWatch.ipa
